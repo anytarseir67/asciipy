@@ -105,13 +105,13 @@ class VideoConverter(BaseConverter):
     def _combine(self) -> None:
         os.system(f'ffmpeg -r {self.fps} -i ./frames/img%01d.png -y temp.mp4')
         os.system(f'ffmpeg -i temp.mp4 -i {self.input} -map 0:v -map 1:a -y {self.output}')
-        os.remove('./temp.mp4')
 
     @staticmethod
     def _clear():
         for f in glob.glob('./frames/*'):
             os.remove(f)
         os.remove('./frames')
+        os.remove('./temp.mp4')
         
 # "test"
 #ImageConverter("C:/memes/2pw232kdnen31.jpg", './test2.png', 400).convert()
