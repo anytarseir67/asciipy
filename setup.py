@@ -6,8 +6,8 @@ README = (HERE / "README.md").read_text().replace('`pip install asciipython`', '
 with open('requirements.txt') as f:
   requirements = f.read().splitlines()
 
-setup(name='asciipython',
-    version='0.1.1a2',
+setup(name='ascii-python',
+    version='0.1.1a1',
     description='python library and cli tool to convert images and videos to ascii.',
     long_description=README,
     long_description_content_type="text/markdown",

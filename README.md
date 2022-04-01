@@ -1,7 +1,7 @@
 # asciipy
  python library and cli tool to convert images and videos to ascii
 
-`pip install asciipython`
+`pip install ascii-python`
 
 ## Command line usage:
 `asciipy [input_file] [output_file] [width] (optional, default=80)`
