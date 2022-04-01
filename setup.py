@@ -6,7 +6,7 @@ README = (HERE / "README.md").read_text()
 with open('requirements.txt') as f:
   requirements = f.read().splitlines()
 
-setup(name='asciipy',
+setup(name='ascii_py',
     version='0.1.1a',
     description='python library and cli tool to convert images and videos to ascii.',
     long_description=README,
