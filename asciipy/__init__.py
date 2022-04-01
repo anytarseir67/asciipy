@@ -112,7 +112,3 @@ class VideoConverter(BaseConverter):
             os.remove(f)
         os.remove('./frames')
         os.remove('./temp.mp4')
-        
-# "test"
-#ImageConverter("C:/memes/2pw232kdnen31.jpg", './test2.png', 400).convert()
-#VideoConverter("C:/memes/video_memes/fuck.mov", './test.mp4', 400).convert()
