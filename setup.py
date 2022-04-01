@@ -7,7 +7,7 @@ with open('requirements.txt') as f:
   requirements = f.read().splitlines()
 
 setup(name='asciipy-any',
-    version='0.1.1a2',
+    version='0.1.1a3',
     description='python library and cli tool to convert images and videos to ascii.',
     long_description=README,
     long_description_content_type="text/markdown",
