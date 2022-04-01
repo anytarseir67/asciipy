@@ -1,7 +1,7 @@
 from setuptools import setup
 import pathlib
 HERE = pathlib.Path(__file__).parent
-README = (HERE / "README.md").read_text().replace('`pip install asciipython`', '')
+README = (HERE / "README.md").read_text().replace('`pip install asciipy-any`', '')
 
 with open('requirements.txt') as f:
   requirements = f.read().splitlines()
