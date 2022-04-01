@@ -1,13 +1,13 @@
 from setuptools import setup
 import pathlib
 HERE = pathlib.Path(__file__).parent
-README = (HERE / "README.md").read_text()
+README = (HERE / "README.md").read_text().replace('`pip install asciipython`', '')
 
 with open('requirements.txt') as f:
   requirements = f.read().splitlines()
 
 setup(name='asciipython',
-    version='0.1.1a',
+    version='0.1.1a2',
     description='python library and cli tool to convert images and videos to ascii.',
     long_description=README,
     long_description_content_type="text/markdown",
