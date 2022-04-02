@@ -1,10 +1,13 @@
-from typing import List, Tuple
 from PIL import Image, ImageDraw
 import pickle
 import numpy as np
 import cv2
 import glob
 import os
+
+#typing imports
+from io import IOBase
+from typing import List, Tuple, Union
 
 charSet = "(SSS#g@@g#SSS("
 
@@ -13,12 +16,14 @@ lerped = pickle.load(open(f"{_path}/colors.pkl", "rb"))
 LUT = np.load(f"{_path}/LUT.npy")
 
 class BaseConverter:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str], width: int=80) -> None:
+        self.input = _input
+        self.output = output
+        self.width: int = width
 
-    def _render(self, img, index: int):
+    def _render(self, img: Image.Image, index: int):
         lines = []
-        _colors: List[Tuple[int, int, int]] = []
+        _colors: List[List[Tuple[int, int, int]]] = []
         for x in range(img.height):
             line = []
             colors = []
@@ -32,7 +37,7 @@ class BaseConverter:
             _colors.append(colors)
         return self._draw_text(img, lines, _colors, index)
 
-    def _draw_text(self, src, text: List[str], colors: List[Tuple[int, int, int]], _i: int) -> None:
+    def _draw_text(self, src: Image.Image, text: List[List[str]], colors: List[List[Tuple[int, int, int]]], _i: int) -> Image.Image:
         im = Image.new(mode="RGB", size=(10000, 10000))
         d = ImageDraw.Draw(im)
         _x = 0
@@ -49,11 +54,8 @@ class BaseConverter:
 
 
 class ImageConverter(BaseConverter):
-    def __init__(self, _input: str, output: str, width: int=80) -> None:
-        super().__init__()
-        self.input: str = _input
-        self.output: str = output
-        self.width: int = width
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80) -> None:
+        super().__init__(_input, output, width)
 
     def convert(self):
         img = Image.open(self.input).convert('RGB')
@@ -65,12 +67,9 @@ class ImageConverter(BaseConverter):
 
 
 class VideoConverter(BaseConverter):
-    def __init__(self, _input: str, output: str, width: int=80, progress: bool=True) -> None:
-        super().__init__()
-        self.input: str = _input
-        self.output: str = output
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, progress: bool=True) -> None:
+        super().__init__(_input, output, width)
         self.progress: bool = progress
-        self.width: int = width
         self.height: int = None
         self.fps: int = None
 
@@ -98,9 +97,10 @@ class VideoConverter(BaseConverter):
         self._combine()
         self._clear()
         
-    def _draw_text(self, src, text: List[str], colors: List[Tuple[int, int, int]], _i: int) -> None:
+    def _draw_text(self, src: Image.Image, text: List[List[str]], colors: List[List[Tuple[int, int, int]]], _i: int) -> Image.Image:
         tmp = super()._draw_text(src, text, colors, _i)
         tmp.save(f'./frames/img{_i}.png')
+        return tmp
 
     def _combine(self) -> None:
         os.system(f'ffmpeg -r {self.fps} -i ./frames/img%01d.png -y temp.mp4')
