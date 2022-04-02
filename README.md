@@ -12,14 +12,14 @@ asciipy provides three classes `VideoConverter`, `ImageConverter`, and `BaseConv
 * **BaseConverter**: provided for subclassing, and internal use
 
 * **VideoConverter**: takes four positional arguments, `input`, `output`, `width`, and `progress`
-* * (str) **input**: input video to convert
-* * (str) **output**: destination of the converted video
+* * (os.PathLike, IOBase, str) **input**: input video to convert
+* * (os.PathLike, IOBase, str) **output**: destination of the converted video
 * * (int) **width**: desired width in ascii characters (height is implicit from the aspect ratio of the input) 
 * * (bool) **progress**: if a progress indicator should be printed during conversion
 
 * **ImageConverter**: takes three positional arguments, `input`, `output`, and `width`
-* * (str) **input**: input image to convert
-* * (str) **output**: destination of the converted image
+* * (os.PathLike, IOBase, str) **input**: input image to convert
+* * (os.PathLike, IOBase, str) **output**: destination of the converted image
 * * (int) **width**: desired width in ascii characters (height is implicit from the aspect ratio of the input) 
 
 both converter classes implement a `.convert()` method, which takes no arguments, to start the conversion
