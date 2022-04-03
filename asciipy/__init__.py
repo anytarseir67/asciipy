@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import glob
 import os
+from imageio import mimread
 
 #typing imports
 from io import IOBase
@@ -21,24 +22,24 @@ class BaseConverter:
         self.output = output
         self.width: int = width
 
-    def _render(self, img: Image.Image, index: int):
+    def _render(self, img: Image.Image) -> Image.Image:
         lines = []
         _colors: List[List[Tuple[int, int, int]]] = []
         for x in range(img.height):
             line = []
             colors = []
             for i in range(img.width):
-                r, g, b = img.getpixel((i, x))
+                r, g, b, a = img.getpixel((i, x))
                 idx = LUT[b, g, r]
                 lerp = lerped[idx][2]
                 line.append(charSet[lerp])
-                colors.append((r, g, b))
+                colors.append((r, g, b, a))
             lines.append(line)
             _colors.append(colors)
-        return self._draw_text(img, lines, _colors, index)
+        return self._draw_text(img, lines, _colors)
 
-    def _draw_text(self, src: Image.Image, text: List[List[str]], colors: List[List[Tuple[int, int, int]]], _i: int) -> Image.Image:
-        im = Image.new(mode="RGB", size=(10000, 10000))
+    def _draw_text(self, src: Image.Image, text: List[List[str]], colors: List[List[Tuple[int, int, int]]]) -> Image.Image:
+        im = Image.new(mode="RGBA", size=(10000, 10000))
         d = ImageDraw.Draw(im)
         _x = 0
         _y = 0
@@ -58,16 +59,38 @@ class ImageConverter(BaseConverter):
         super().__init__(_input, output, width)
 
     def convert(self):
-        img = Image.open(self.input).convert('RGB')
+        img = Image.open(self.input).convert('RGBA')
         aspect_ratio = img.width / img.height
         height = int(self.width / (2 * aspect_ratio))
         img = img.resize((self.width, height))
-        final = self._render(img, 0)
+        final = self._render(img)
         final.save(self.output)
 
 
+class GifConverter(BaseConverter):
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int = 80, *, gif: bool=True) -> None:
+        super().__init__(_input, output, width)
+        self._gif = gif
+
+    def convert(self):
+        img = Image.open(self.input)
+        img.load()
+        aspect_ratio = img.width / img.height
+        height = int(self.width / (2 * aspect_ratio))
+        converted_frames: List[Image.Image] = []
+        frames = mimread(self.input)
+        for frame in frames:
+            frame = Image.fromarray(frame).convert('RGBA').resize((self.width, height))
+            converted_frames.append(self._render(frame))
+
+        if self._gif:
+            converted_frames.pop(0).save(self.output, save_all=True, append_images=converted_frames, loop=img.info['loop'], duration=img.info['duration'])
+        else:
+            converted_frames[0].save(self.output)
+
+
 class VideoConverter(BaseConverter):
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, progress: bool=True) -> None:
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, *, progress: bool=True) -> None:
         super().__init__(_input, output, width)
         self.progress: bool = progress
         self.height: int = None
@@ -87,20 +110,20 @@ class VideoConverter(BaseConverter):
             if img is None: break
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(img)
+            img = img.convert('RGBA')
             aspect_ratio = img.width / img.height
             self.height = int(self.width / (2 * aspect_ratio))
             img = img.resize((self.width, self.height))
-            self._render(img, i)
+            frame = self._render(img)
+            frame.save(f'./frames/img{i}.png')
             if self.progress:
                 print(f"\r{round((i/total_frames)*100)}% complete", end='')
             i+=1
         self._combine()
         self._clear()
         
-    def _draw_text(self, src: Image.Image, text: List[List[str]], colors: List[List[Tuple[int, int, int]]], _i: int) -> Image.Image:
-        tmp = super()._draw_text(src, text, colors, _i)
-        tmp.save(f'./frames/img{_i}.png')
-        return tmp
+    def _draw_text(self, src: Image.Image, text: List[List[str]], colors: List[List[Tuple[int, int, int]]]) -> Image.Image:
+        return super()._draw_text(src, text, colors)
 
     def _combine(self) -> None:
         os.system(f'ffmpeg -r {self.fps} -i ./frames/img%01d.png -y temp.mp4')
@@ -108,7 +131,9 @@ class VideoConverter(BaseConverter):
 
     @staticmethod
     def _clear():
+        os.remove('./temp.mp4')
         for f in glob.glob('./frames/*'):
             os.remove(f)
         os.remove('./frames')
-        os.remove('./temp.mp4')
+import sys
+GifConverter(sys.argv[1], './test.gif').convert()

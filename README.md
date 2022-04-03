@@ -23,7 +23,7 @@ asciipy provides three classes `VideoConverter`, `ImageConverter`, and `BaseConv
 * **BaseConverter**: provided for subclassing, and internal use
 
 
-* **VideoConverter**: takes four positional arguments, `input`, `output`, `width`, and `progress`
+* **VideoConverter**: takes three positional arguments, `input`, `output`, `width`, and 1 keyword argument, `progress`
 
 * * (os.PathLike, IOBase, str) **input**: input video to convert
 
@@ -55,6 +55,13 @@ img = ImageConverter(sys.argv[1], './ascii.png')
 img.convert()
 print(f"{sys.argv[1]} converted and written to ./ascii.png")
 ```
+
+## Planned features:
+* proper gif support (partialy done, but still to buggy to be considered implemented)
+* using the alpha channel of png's to preserve transparency, instead of filling blank spaces with `0, 0, 0`
+* ability to pass url's to the input arguments
+* ability to write output as html
+* ability to convert vectors (not sure how i could even go about this)
 
 ## need help?
 * [join my discord server!](https://discord.gg/fDQPCBybVJ)
