@@ -135,5 +135,3 @@ class VideoConverter(BaseConverter):
         for f in glob.glob('./frames/*'):
             os.remove(f)
         os.remove('./frames')
-import sys
-GifConverter(sys.argv[1], './test.gif').convert()
