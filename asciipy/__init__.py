@@ -3,7 +3,7 @@ import cv2
 import glob
 import os
 from imageio import mimread
-from url_ import urlcheck, download
+from .url_ import urlcheck, download
 
 #typing imports
 from io import IOBase
