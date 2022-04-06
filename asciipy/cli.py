@@ -1,6 +1,5 @@
 from asciipy import VideoConverter, ImageConverter
 import sys
-import os
 from PIL import UnidentifiedImageError
 
 def main():

@@ -155,3 +155,5 @@ test.py
 *.pyi
 *.gif
 asciipy/url_.py
+asciipy/test.mp4
+asciipy/downloaded.mp4

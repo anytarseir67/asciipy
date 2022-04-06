@@ -16,7 +16,6 @@ setup(name='asciipy-any',
     license="GPLv3",
     packages=['asciipy'],
     install_requires=requirements,
-    package_data={'': ['./colors.pkl', './LUT.npy']},
     include_package_data=True,
     entry_points = {
         'console_scripts': ['asciipy=asciipy.cli:main'],

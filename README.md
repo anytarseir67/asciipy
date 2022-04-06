@@ -57,8 +57,7 @@ print(f"{sys.argv[1]} converted and written to ./ascii.png")
 ```
 
 ## Planned features:
-* ~~proper gif support~~ (partialy done, but still to buggy to be considered implemented)
-* ~~ability to pass url's to the input arguments~~ (obviously possible, but doesn't integrate nicely into the current structure)
+* ~~proper gif support~~ (mostly done, but still to buggy to be considered implemented)
 * ability to write output as html
 * ability to convert vectors (not sure how i could even go about this)
 

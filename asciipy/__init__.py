@@ -1,27 +1,34 @@
 from PIL import Image, ImageDraw
-import pickle
-import numpy as np
 import cv2
 import glob
 import os
 from imageio import mimread
+from url_ import urlcheck, download
 
 #typing imports
 from io import IOBase
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Any
 
-charSet = "(SSS#g@@g#SSS("
+_chars = "gS#%@"
 
-_path = os.path.dirname(os.path.abspath(__file__))
-lerped = pickle.load(open(f"{_path}/colors.pkl", "rb"))
-LUT = np.load(f"{_path}/LUT.npy")
+def _remap(x, in_min, in_max, out_min, out_max):
+    return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
+
 
 class BaseConverter:
     def __init__(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str], width: int=80) -> None:
-        self.input = _input
+        self.url = False
+        self.input = self._process_input(_input)
         self.output = output
         self.width: int = width
 
+    def _process_input(self, _input: Any) -> Any:
+        if isinstance(_input, str):
+            if urlcheck(_input):
+                self.url = True
+                return f"./downloaded/{download(_input)}"
+        return _input
+        
     def _render(self, img: Image.Image) -> Image.Image:
         lines = []
         _colors: List[List[Tuple[int, int, int]]] = []
@@ -30,9 +37,8 @@ class BaseConverter:
             colors = []
             for i in range(img.width):
                 r, g, b, a = img.getpixel((i, x))
-                idx = LUT[b, g, r]
-                lerp = lerped[idx][2]
-                line.append(charSet[lerp])
+                char = _chars[_remap(r+g+b, 0, 765, 0, 4)]
+                line.append(char)
                 colors.append((r, g, b, a))
             lines.append(line)
             _colors.append(colors)
