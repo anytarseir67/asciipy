@@ -25,6 +25,10 @@ def download(url: str) -> str:
     path = parse.urlparse(url).path
     print(path)
     ext = os.path.os.path.split(path)[1]
+    try:
+        os.mkdir('./downloaded')
+    except FileExistsError:
+        pass
     with open(f'./downloaded/{ext}', 'wb') as f:
         f.write(data.read())
     return ext
