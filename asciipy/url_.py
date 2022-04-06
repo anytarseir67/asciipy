@@ -23,7 +23,6 @@ def download(url: str) -> str:
             data.write(chunk)
     data.seek(0)
     path = parse.urlparse(url).path
-    print(path)
     ext = os.path.os.path.split(path)[1]
     try:
         os.mkdir('./downloaded')
