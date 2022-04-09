@@ -77,6 +77,7 @@ class GifConverter(BaseConverter):
     def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int = 80, *, gif: bool=True) -> None:
         super().__init__(_input, output, width)
         self._gif = gif
+        print('WARNING: gif conversion is not yet fully functional, please report any bugs at: https://github.com/anytarseir67/asciipy/issues/new')
 
     def convert(self):
         img = Image.open(self.input)
@@ -140,4 +141,4 @@ class VideoConverter(BaseConverter):
         os.remove('./temp.mp4')
         for f in glob.glob('./frames/*'):
             os.remove(f)
-        os.remove('./frames')
+        os.rmdir('./frames')

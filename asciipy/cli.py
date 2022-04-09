@@ -1,4 +1,4 @@
-from asciipy import VideoConverter, ImageConverter
+from asciipy import VideoConverter, ImageConverter, GifConverter
 import sys
 from PIL import UnidentifiedImageError
 
@@ -14,9 +14,12 @@ def main():
     if len(sys.argv) == 4:
         width = int(sys.argv[3])
     try:
-        ImageConverter(_input, output, width).convert()
-    except UnidentifiedImageError:
-        VideoConverter(_input, output, width).convert()
+        GifConverter(_input, output, width).convert()
+    except (UnidentifiedImageError, ValueError):
+        try:
+            ImageConverter(_input, output, width).convert()
+        except UnidentifiedImageError:
+            VideoConverter(_input, output, width).convert()
     print('Done!')
 
 if __name__ == "__main__":
