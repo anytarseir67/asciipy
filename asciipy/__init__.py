@@ -77,7 +77,6 @@ class GifConverter(BaseConverter):
     def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int = 80, *, gif: bool=True) -> None:
         super().__init__(_input, output, width)
         self._gif = gif
-        print('WARNING: gif conversion is not yet fully functional, please report any bugs at: https://github.com/anytarseir67/asciipy/issues/new')
 
     def convert(self):
         img = Image.open(self.input)
@@ -86,6 +85,8 @@ class GifConverter(BaseConverter):
         height = int(self.width / (2 * aspect_ratio))
         converted_frames: List[Image.Image] = []
         frames = mimread(self.input)
+        # print is here so it doesn't falsely warn when using the default CLI
+        print('WARNING: gif conversion is not yet fully functional, please report any bugs at: https://github.com/anytarseir67/asciipy/issues/new')
         for frame in frames:
             frame = Image.fromarray(frame).convert('RGBA').resize((self.width, height))
             converted_frames.append(self._render(frame))
