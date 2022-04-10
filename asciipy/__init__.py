@@ -4,6 +4,7 @@ import glob
 import os
 from imageio import mimread
 from .url_ import urlcheck, download
+from math import sqrt
 
 #typing imports
 from io import IOBase
@@ -16,11 +17,12 @@ def _remap(x, in_min, in_max, out_min, out_max):
 
 
 class BaseConverter:
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str], width: int=80) -> None:
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str], width: int=80, pallet: List[Tuple[int, int, int]]=None) -> None:
         self.url = False
         self.input = self._process_input(_input)
         self.output = output
         self.width: int = width
+        self.pallet: List[Tuple[int, int, int]] = pallet
 
     def _process_input(self, _input: Any) -> Any:
         if isinstance(_input, str):
@@ -29,6 +31,20 @@ class BaseConverter:
                 return f"./downloaded/{download(_input)}"
         return _input
         
+    def _pallet(self, col: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+        if self.pallet != None:
+            color_diffs = []
+            for color in self.pallet:
+                cr, cg, cb = color
+                color_diff = sqrt((col[0] - cr)**2 + (col[1] - cg)**2 + (col[2] - cb)**2)
+                color_diffs.append((color_diff, color))
+
+            # i fucking hate this, but it works so....
+            x = list(min(color_diffs)[1])
+            x.append(col[3])
+            return tuple(x)
+        return col
+
     def _render(self, img: Image.Image) -> Image.Image:
         lines = []
         _colors: List[List[Tuple[int, int, int]]] = []
@@ -36,7 +52,7 @@ class BaseConverter:
             line = []
             colors = []
             for i in range(img.width):
-                r, g, b, a = img.getpixel((i, x))
+                r, g, b, a = self._pallet(img.getpixel((i, x)))
                 char = _chars[_remap(r+g+b, 0, 765, 0, 4)]
                 line.append(char)
                 colors.append((r, g, b, a))
@@ -61,8 +77,8 @@ class BaseConverter:
 
 
 class ImageConverter(BaseConverter):
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80) -> None:
-        super().__init__(_input, output, width)
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, pallet: List[Tuple[int, int, int]]=None) -> None:
+        super().__init__(_input, output, width, pallet)
 
     def convert(self):
         img = Image.open(self.input).convert('RGBA')
@@ -74,8 +90,8 @@ class ImageConverter(BaseConverter):
 
 
 class GifConverter(BaseConverter):
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int = 80, *, gif: bool=True) -> None:
-        super().__init__(_input, output, width)
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int = 80, pallet: List[Tuple[int, int, int]]=None, *, gif: bool=True) -> None:
+        super().__init__(_input, output, width, pallet)
         self._gif = gif
 
     def convert(self):
@@ -98,8 +114,8 @@ class GifConverter(BaseConverter):
 
 
 class VideoConverter(BaseConverter):
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, *, progress: bool=True) -> None:
-        super().__init__(_input, output, width)
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, pallet: List[Tuple[int, int, int]]=None, *, progress: bool=True) -> None:
+        super().__init__(_input, output, width, pallet)
         self.progress: bool = progress
         self.height: int = None
         self.fps: int = None
@@ -130,9 +146,6 @@ class VideoConverter(BaseConverter):
         self._combine()
         self._clear()
         
-    def _draw_text(self, src: Image.Image, text: List[List[str]], colors: List[List[Tuple[int, int, int]]]) -> Image.Image:
-        return super()._draw_text(src, text, colors)
-
     def _combine(self) -> None:
         os.system(f'ffmpeg -r {self.fps} -i ./frames/img%01d.png -y temp.mp4')
         os.system(f'ffmpeg -i temp.mp4 -i {self.input} -map 0:v -map 1:a -y {self.output}')
