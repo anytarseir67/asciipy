@@ -17,12 +17,12 @@ def _remap(x, in_min, in_max, out_min, out_max):
 
 
 class BaseConverter:
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str], width: int=80, pallet: List[Tuple[int, int, int]]=None) -> None:
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str], width: int=80, palette: List[Tuple[int, int, int]]=None) -> None:
         self.url = False
         self.input = self._process_input(_input)
         self.output = output
         self.width: int = width
-        self.pallet: List[Tuple[int, int, int]] = pallet
+        self.palette: List[Tuple[int, int, int]] = palette
 
     def _process_input(self, _input: Any) -> Any:
         if isinstance(_input, str):
@@ -31,10 +31,10 @@ class BaseConverter:
                 return f"./downloaded/{download(_input)}"
         return _input
         
-    def _pallet(self, col: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
-        if self.pallet != None:
+    def _palette(self, col: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+        if self.palette != None:
             color_diffs = []
-            for color in self.pallet:
+            for color in self.palette:
                 cr, cg, cb = color
                 color_diff = sqrt((col[0] - cr)**2 + (col[1] - cg)**2 + (col[2] - cb)**2)
                 color_diffs.append((color_diff, color))
@@ -52,7 +52,7 @@ class BaseConverter:
             line = []
             colors = []
             for i in range(img.width):
-                r, g, b, a = self._pallet(img.getpixel((i, x)))
+                r, g, b, a = self._palette(img.getpixel((i, x)))
                 char = _chars[_remap(r+g+b, 0, 765, 0, 4)]
                 line.append(char)
                 colors.append((r, g, b, a))
@@ -77,8 +77,8 @@ class BaseConverter:
 
 
 class ImageConverter(BaseConverter):
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, pallet: List[Tuple[int, int, int]]=None) -> None:
-        super().__init__(_input, output, width, pallet)
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, palette: List[Tuple[int, int, int]]=None) -> None:
+        super().__init__(_input, output, width, palette)
 
     def convert(self):
         img = Image.open(self.input).convert('RGBA')
@@ -90,8 +90,8 @@ class ImageConverter(BaseConverter):
 
 
 class GifConverter(BaseConverter):
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int = 80, pallet: List[Tuple[int, int, int]]=None, *, gif: bool=True) -> None:
-        super().__init__(_input, output, width, pallet)
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int = 80, palette: List[Tuple[int, int, int]]=None, *, gif: bool=True) -> None:
+        super().__init__(_input, output, width, palette)
         self._gif = gif
 
     def convert(self):
@@ -114,8 +114,8 @@ class GifConverter(BaseConverter):
 
 
 class VideoConverter(BaseConverter):
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, pallet: List[Tuple[int, int, int]]=None, *, progress: bool=True) -> None:
-        super().__init__(_input, output, width, pallet)
+    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, palette: List[Tuple[int, int, int]]=None, *, progress: bool=True) -> None:
+        super().__init__(_input, output, width, palette)
         self.progress: bool = progress
         self.height: int = None
         self.fps: int = None
