@@ -3,8 +3,9 @@ import cv2
 import glob
 import os
 from imageio import mimread
-from .url_ import urlcheck, download
 from math import sqrt
+from .url_ import urlcheck, download
+from . import palettes
 
 #typing imports
 from io import IOBase
