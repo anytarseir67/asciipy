@@ -3,6 +3,10 @@
 
 `pip install asciipy-any`
 
+## Example output:
+![image example](https://github.com/anytarseir67/asciipy/blob/main/examples/peepo-juicebox.png?raw=True) 
+![gif example](https://github.com/anytarseir67/asciipy/blob/main/examples/bonk.gif?raw=True)
+
 ## Command line usage:
 `asciipy [input_file] [output_file] [width] (optional, default=80)`
 
