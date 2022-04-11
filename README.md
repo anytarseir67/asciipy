@@ -19,30 +19,27 @@
 ## Python usage:
 asciipy provides three classes `VideoConverter`, `ImageConverter`, and `BaseConverter`
 
+* *note:* `input` fields can accept a url to convert, instead of local media or buffers.
 
-* **BaseConverter**: provided for subclassing, and internal use
+### **BaseConverter**: takes four positional arguments, `input`, `output`, `width`, and `palette`.
+`os.PathLike, IOBase, str` **input**: input media to convert
 
+`os.PathLike, IOBase, str` **output**: destination of the converted image
 
-* **VideoConverter**: takes three positional arguments, `input`, `output`, `width`, and 1 keyword argument, `progress`
+`int` **width**: desired width in ascii characters (height is implicit from the aspect ratio of the input) 
 
-* * (os.PathLike, IOBase, str) **input**: input video to convert
-
-* * (os.PathLike, IOBase, str) **output**: destination of the converted video
-
-* * (int) **width**: desired width in ascii characters (height is implicit from the aspect ratio of the input) 
-
-* * (bool) **progress**: if a progress indicator should be printed during conversion
+`List[Tuple[int, int, int]]` **palette**: optional custom color palette, list of RGB tuples currently 3 palettes are included in `asciipy.palettes`. `c64`, `nes`, and `cmd`
 
 
-* **ImageConverter**: takes three positional arguments, `input`, `output`, and `width`
+### **ImageConverter**: no additional arguments.
 
-* * (os.PathLike, IOBase, str) **input**: input image to convert
+### **GifConverter**: takes 1 keyword argument, `gif`.
+`bool` **gif**: if the converted output should be a gif, defaults to True. if False, the first frame of the gif will be output as a png
 
-* * (os.PathLike, IOBase, str) **output**: destination of the converted image
+### **VideoConverter**: takes 1 keyword argument, `progress`.
+`bool` **progress**: if a progress indicator should be printed during conversion
 
-* * (int) **width**: desired width in ascii characters (height is implicit from the aspect ratio of the input) 
-
-both converter classes implement a `.convert()` method, which takes no arguments, to start the conversion
+all converter classes implement a `.convert()` method, which takes no arguments, to start the conversion
 
 **Python examples**:
 
@@ -57,7 +54,7 @@ print(f"{sys.argv[1]} converted and written to ./ascii.png")
 ```
 
 ## Planned features:
-* ~~proper gif support~~ (mostly done, but still to buggy to be considered implemented)
+* ~~proper gif support~~ (mostly done, but still to buggy to be considered finished)
 * ability to write output as html
 * ability to convert vectors (not sure how i could even go about this)
 
