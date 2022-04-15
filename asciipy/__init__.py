@@ -4,6 +4,7 @@ import glob
 import os
 from imageio import mimread
 from math import sqrt
+from random import randint
 from .url_ import urlcheck, download
 from . import palettes
 
@@ -120,12 +121,11 @@ class VideoConverter(BaseConverter):
         self.progress: bool = progress
         self.height: int = None
         self.fps: int = None
+        self._id: int = randint(0, 999999) 
+        # used in the frames path so more than one converter can run in the same wd
 
     def convert(self):
-        try:
-            os.mkdir('./frames')
-        except FileExistsError:
-            pass
+        os.mkdir(f'./frames_{self._id}')
         vid = cv2.VideoCapture(self.input)
         self.fps = vid.get(cv2.CAP_PROP_FPS)
         total_frames = vid.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -140,7 +140,7 @@ class VideoConverter(BaseConverter):
             self.height = int(self.width / (2 * aspect_ratio))
             img = img.resize((self.width, self.height))
             frame = self._render(img)
-            frame.save(f'./frames/img{i}.png')
+            frame.save(f'./frames_{self._id}/img{i}.png')
             if self.progress:
                 print(f"\r{round((i/total_frames)*100)}% complete", end='')
             i+=1
@@ -148,12 +148,11 @@ class VideoConverter(BaseConverter):
         self._clear()
         
     def _combine(self) -> None:
-        os.system(f'ffmpeg -r {self.fps} -i ./frames/img%01d.png -y temp.mp4')
+        os.system(f'ffmpeg -r {self.fps} -i ./frames_{self._id}/img%01d.png -y temp.mp4')
         os.system(f'ffmpeg -i temp.mp4 -i {self.input} -map 0:v -map 1:a -y {self.output}')
 
-    @staticmethod
-    def _clear():
+    def _clear(self):
         os.remove('./temp.mp4')
-        for f in glob.glob('./frames/*'):
+        for f in glob.glob(f'./frames_{self._id}/*'):
             os.remove(f)
-        os.rmdir('./frames')
+        os.rmdir(f'./frames_{self._id}')
