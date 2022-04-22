@@ -17,7 +17,7 @@ __version__ = "0.0.1"
 _chars = "gS#%@"
 
 def _remap(x, in_min, in_max, out_min, out_max):
-    return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)        
+    return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)   
 
 class BaseConverter:
     def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None) -> None:
