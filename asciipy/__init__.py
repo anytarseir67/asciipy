@@ -5,32 +5,34 @@ import os
 from imageio import mimread
 from math import sqrt
 from random import randint
-from .url_ import urlcheck, download
+from .url_ import urlcheck, download, requestsNotInstalled
 from . import palettes
 
 #typing imports
 from io import IOBase
 from typing import List, Tuple, Union, Any
 
+__version__ = "0.0.1"
+
 _chars = "gS#%@"
 
 def _remap(x, in_min, in_max, out_min, out_max):
-    return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
-
+    return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)        
 
 class BaseConverter:
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str], width: int=80, palette: List[Tuple[int, int, int]]=None) -> None:
+    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None) -> None:
         self.url = False
-        self.input = self._process_input(_input)
-        self.output = output
         self.width: int = width
         self.palette: List[Tuple[int, int, int]] = palette
 
     def _process_input(self, _input: Any) -> Any:
         if isinstance(_input, str):
-            if urlcheck(_input):
+            check = urlcheck(_input)
+            if check:
                 self.url = True
                 return f"./downloaded/{download(_input)}"
+            elif check == None:
+                raise requestsNotInstalled("requests is required to convert from urls, install it directly, or install asciipy-any[url]")
         return _input
         
     def _palette(self, col: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
@@ -77,12 +79,17 @@ class BaseConverter:
         im = im.crop((0, 0, width, height))
         return im
 
+    def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
+        self.input = self._process_input(_input)
+        self.output = output
+
 
 class ImageConverter(BaseConverter):
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, palette: List[Tuple[int, int, int]]=None) -> None:
-        super().__init__(_input, output, width, palette)
+    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None) -> None:
+        super().__init__(width, palette)
 
-    def convert(self):
+    def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
+        super().convert(_input, output)
         img = Image.open(self.input).convert('RGBA')
         aspect_ratio = img.width / img.height
         height = int(self.width / (2 * aspect_ratio))
@@ -92,11 +99,12 @@ class ImageConverter(BaseConverter):
 
 
 class GifConverter(BaseConverter):
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int = 80, palette: List[Tuple[int, int, int]]=None, *, gif: bool=True) -> None:
-        super().__init__(_input, output, width, palette)
+    def __init__(self, width: int = 80, palette: List[Tuple[int, int, int]]=None, *, gif: bool=True) -> None:
+        super().__init__(width, palette)
         self._gif = gif
 
-    def convert(self):
+    def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
+        super().convert(_input, output)
         img = Image.open(self.input)
         img.load()
         aspect_ratio = img.width / img.height
@@ -116,42 +124,48 @@ class GifConverter(BaseConverter):
 
 
 class VideoConverter(BaseConverter):
-    def __init__(self, _input: Union[os.PathLike, IOBase, str], output: str, width: int=80, palette: List[Tuple[int, int, int]]=None, *, progress: bool=True) -> None:
-        super().__init__(_input, output, width, palette)
+    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, *, progress: bool=True) -> None:
+        super().__init__(width, palette)
         self.progress: bool = progress
         self.height: int = None
         self.fps: int = None
         self._id: int = randint(0, 999999) 
         # used in the frames path so more than one converter can run in the same wd
 
-    def convert(self):
-        os.mkdir(f'./frames_{self._id}')
-        vid = cv2.VideoCapture(self.input)
-        self.fps = vid.get(cv2.CAP_PROP_FPS)
-        total_frames = vid.get(cv2.CAP_PROP_FRAME_COUNT)
-        i = 0
-        while(vid.isOpened()):  
-            img = vid.read()[1]
-            if img is None: break
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img = Image.fromarray(img)
-            img = img.convert('RGBA')
-            aspect_ratio = img.width / img.height
-            self.height = int(self.width / (2 * aspect_ratio))
-            img = img.resize((self.width, self.height))
-            frame = self._render(img)
-            frame.save(f'./frames_{self._id}/img{i}.png')
-            if self.progress:
-                print(f"\r{round((i/total_frames)*100)}% complete", end='')
-            i+=1
-        self._combine()
-        self._clear()
-        
+    def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
+        super().convert(_input, output)
+        try:
+            os.mkdir(f'./frames_{self._id}')
+            vid = cv2.VideoCapture(self.input)
+            self.fps = vid.get(cv2.CAP_PROP_FPS)
+            total_frames = vid.get(cv2.CAP_PROP_FRAME_COUNT)
+            i = 0
+            while(vid.isOpened()):  
+                img = vid.read()[1]
+                if img is None: break
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(img)
+                img = img.convert('RGBA')
+                aspect_ratio = img.width / img.height
+                self.height = int(self.width / (2 * aspect_ratio))
+                img = img.resize((self.width, self.height))
+                frame = self._render(img)
+                frame.save(f'./frames_{self._id}/img{i}.png')
+                if self.progress:
+                    print(f"\r{round((i/total_frames)*100)}% complete", end='')
+                i+=1
+            self._combine()
+        except KeyboardInterrupt:
+            print('conversion interupted.')
+        finally:
+            print('clearing temp files...')
+            self._clear()
+
     def _combine(self) -> None:
         os.system(f'ffmpeg -r {self.fps} -i ./frames_{self._id}/img%01d.png -y temp.mp4')
-        os.system(f'ffmpeg -i temp.mp4 -i {self.input} -map 0:v -map 1:a -y {self.output}')
+        os.system(f'ffmpeg -i temp.mp4 -i "{self.input}" -map 0:v -map 1:a -y {self.output}')
 
-    def _clear(self):
+    def _clear(self) -> None:
         os.remove('./temp.mp4')
         for f in glob.glob(f'./frames_{self._id}/*'):
             os.remove(f)

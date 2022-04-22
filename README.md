@@ -22,40 +22,60 @@ additional examples can be found in `/examples/`
 
 * video with custom size: `asciipy test.mp4 ascii.mp4 160`
 
+## Optional dependencies (URL and Youtube support):
+* *note: these libraries can be manually installed instead. `youtube_dl` can be used instead of `yt-dlp`*
+* `asciipy-any[full]` will install `requests` and `yt-dlp` to enable downloading from urls and youtube videos.
+* `asciipy-any[url]` will install `requests` to enable downloading from urls.
+* `asciipy-any[youtube]` will install `yt-dlp` to enable downloading youtube videos.
+
 ## Python usage:
-asciipy provides three classes `VideoConverter`, `ImageConverter`, and `BaseConverter`
+asciipy provides four classes `ImageConverter`, `GifConverter`, `VideoConverter`, and `BaseConverter`
 
 * *note:* `input` fields can accept a url to convert, instead of local media or buffers.
 
-### **BaseConverter**: takes four positional arguments, `input`, `output`, `width`, and `palette`.
-`os.PathLike, IOBase, str` **input**: input media to convert
+### **BaseConverter**: all other converters inherit from this class. 
+* takes two positional arguments, `width`, and `palette`.
+* `int` **width**: desired width in ascii characters (height is implicit from the aspect ratio of the input) 
+* `List[Tuple[int, int, int]]` **palette**: optional custom color palette, list of RGB tuples. currently 3 palettes are included in `asciipy.palettes`. `c64`, `nes`, and `cmd`
 
-`os.PathLike, IOBase, str` **output**: destination of the converted image
+**Methods**:
 
-`int` **width**: desired width in ascii characters (height is implicit from the aspect ratio of the input) 
+`convert`: method called to start conversion.
+* takes 2 arguments, `input`, and `output`, and returns `None`.
+* `os.PathLike, IOBase, str` **input**: input media to convert. can be a file, iobuffer, or url.
+* `os.PathLike, IOBase, str` **output**: destination of the converted media.
 
-`List[Tuple[int, int, int]]` **palette**: optional custom color palette, list of RGB tuples currently 3 palettes are included in `asciipy.palettes`. `c64`, `nes`, and `cmd`
+### **ImageConverter**: class used for image conversion.
+* takes no extra arguments.
 
+### **GifConverter**: class used for gif conversion.
+* takes one extra argument:
+* `bool` **gif**: if the converted output should be a gif, defaults to `True`. if `False`, the first frame of the gif will be output as a png.
 
-### **ImageConverter**: no additional arguments.
+### **VideoConverter**: class used for conversion of videos.
+* takes one extra argument:
+* `bool` **progress**: if a progress indicator should be printed during conversion.
 
-### **GifConverter**: takes 1 keyword argument, `gif`.
-`bool` **gif**: if the converted output should be a gif, defaults to True. if False, the first frame of the gif will be output as a png
+## Palettes:
+custom color palettes can be provided to the constructor of any converter. it should be a list of rgb tuples. the order of the tuples does not matter, however the order **inside** the tuple must be RGB, or you will get unintended colors.
 
-### **VideoConverter**: takes 1 keyword argument, `progress`.
-`bool` **progress**: if a progress indicator should be printed during conversion
+example (black and white):
+```py
+palette = [
+    (0, 0, 0),
+    (255, 255, 255)
+]
+```
 
-all converter classes implement a `.convert()` method, which takes no arguments, to start the conversion
+## Python examples:
 
-**Python examples**:
-
-image to ascii cli
+**image to ascii cli**
 ```py
 from asciipy import ImageConverter
 import sys
 
-img = ImageConverter(sys.argv[1], './ascii.png')
-img.convert()
+img = ImageConverter()
+img.convert(sys.argv[1], './ascii.png')
 print(f"{sys.argv[1]} converted and written to ./ascii.png")
 ```
 

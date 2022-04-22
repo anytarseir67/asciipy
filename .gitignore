@@ -156,4 +156,6 @@ test.py
 *.gif
 asciipy/test.mp4
 asciipy/downloaded.mp4
+asciipy/downloaded
 !examples/*
+
