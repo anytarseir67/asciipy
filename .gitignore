@@ -159,3 +159,5 @@ asciipy/downloaded.mp4
 asciipy/downloaded
 !examples/*
 
+*.ttf
+*.otf

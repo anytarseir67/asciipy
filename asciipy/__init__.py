@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import cv2
 import glob
 import os
@@ -20,10 +20,12 @@ def _remap(x, in_min, in_max, out_min, out_max):
     return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)   
 
 class BaseConverter:
-    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None) -> None:
+    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None) -> None:
         self.url = False
         self.width: int = width
         self.palette: List[Tuple[int, int, int]] = palette
+        self.chars = char_list
+        self.font = font
 
     def _process_input(self, _input: Any) -> Any:
         if isinstance(_input, str):
@@ -57,7 +59,7 @@ class BaseConverter:
             colors = []
             for i in range(img.width):
                 r, g, b, a = self._palette(img.getpixel((i, x)))
-                char = _chars[_remap(r+g+b, 0, 765, 0, 4)]
+                char = self.chars[_remap(r+g+b, 0, 765, 0, len(self.chars)-1)]
                 line.append(char)
                 colors.append((r, g, b, a))
             lines.append(line)
@@ -69,13 +71,14 @@ class BaseConverter:
         d = ImageDraw.Draw(im)
         _x = 0
         _y = 0
+        font = ImageFont.truetype(self.font, 128)
         for i, line in enumerate(text):
             for x, char in enumerate(line):
-                d.text((_x, _y), char, fill=(colors[i][x]))
-                _x += d.textsize(char)[0]
-            _y += d.textsize(char)[1]
+                d.text((_x, _y), char, fill=(colors[i][x]), font=font)
+                _x += d.textsize(char, font=font)[0]
+            _y += d.textsize(char, font=font)[1]
             _x = 0
-        width, height = (src.width * d.textsize(char)[0], src.height *  d.textsize(char)[1])
+        width, height = (src.width * d.textsize(char, font=font)[0], src.height *  d.textsize(char, font=font)[1])
         im = im.crop((0, 0, width, height))
         return im
 
@@ -85,8 +88,8 @@ class BaseConverter:
 
 
 class ImageConverter(BaseConverter):
-    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None) -> None:
-        super().__init__(width, palette)
+    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None) -> None:
+        super().__init__(width, palette, char_list, font)
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
         super().convert(_input, output)
@@ -99,8 +102,8 @@ class ImageConverter(BaseConverter):
 
 
 class GifConverter(BaseConverter):
-    def __init__(self, width: int = 80, palette: List[Tuple[int, int, int]]=None, *, gif: bool=True) -> None:
-        super().__init__(width, palette)
+    def __init__(self, width: int = 80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None, *, gif: bool=True) -> None:
+        super().__init__(width, palette, char_list, font)
         self._gif = gif
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
@@ -124,8 +127,8 @@ class GifConverter(BaseConverter):
 
 
 class VideoConverter(BaseConverter):
-    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, *, progress: bool=True) -> None:
-        super().__init__(width, palette)
+    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None, *, progress: bool=True) -> None:
+        super().__init__(width, palette, char_list, font)
         self.progress: bool = progress
         self.height: int = None
         self.fps: int = None
