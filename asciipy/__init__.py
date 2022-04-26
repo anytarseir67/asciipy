@@ -71,7 +71,10 @@ class BaseConverter:
         d = ImageDraw.Draw(im)
         _x = 0
         _y = 0
-        font = ImageFont.truetype(self.font, 128)
+        try:
+            font = ImageFont.truetype(self.font, 128)
+        except AttributeError:
+            font = None
         for i, line in enumerate(text):
             for x, char in enumerate(line):
                 d.text((_x, _y), char, fill=(colors[i][x]), font=font)
