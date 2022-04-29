@@ -34,9 +34,12 @@ asciipy provides four classes `ImageConverter`, `GifConverter`, `VideoConverter`
 * *note:* `input` fields can accept a url to convert, instead of local media or buffers.
 
 ### **BaseConverter**: all other converters inherit from this class. 
-* takes two positional arguments, `width`, and `palette`.
+* takes five positional arguments, `width`, `palette`, `char_list`, `font`, and `transparent`.
 * `int` **width**: desired width in ascii characters (height is implicit from the aspect ratio of the input) 
-* `List[Tuple[int, int, int]]` **palette**: optional custom color palette, list of RGB tuples. currently 3 palettes are included in `asciipy.palettes`. `c64`, `nes`, and `cmd`
+* `List[Tuple[int, int, int]]` **palette**: optional custom color palette, list of RGB tuples. currently four palettes are included in `asciipy.palettes`. `c64`, `nes`, `cmd`, and `grayscale`
+* `str` **char_list**: optional custom character list from darkest to brightest
+* `os.PathLike, IOBase, str` **font**: optional font used for characters in the output media. supports TrueType and OpenType fonts.
+* `bool` **transparent**: when True, the alpha channel from the input is preserved and applied to the output. otherwise the alpha channel is discarded (defaults to `False`)
 
 **Methods**:
 
