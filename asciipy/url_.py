@@ -33,25 +33,24 @@ url = re.compile(
 
 _ext: str = None
 
+if yt:
+    class VideoProcessor(youtube.postprocessor.PostProcessor):
+        def run(self, info):
+            global _ext
+            _ext = info['filepath']
+            shutil.move(_ext, f'./downloaded/{_ext}')
+            return [], info
+
 class ytdlNotInstalled(Exception):
     pass
 
 class requestsNotInstalled(Exception):
     pass
 
-class VideoProcessor(youtube.postprocessor.PostProcessor):
-    def run(self, info):
-        global _ext
-        _ext = info['filepath']
-        shutil.move(_ext, f'./downloaded/{_ext}')
-        return [], info
-
-
 def urlcheck(text: str) -> Union[bool, None]:
     if req:
         return re.match(url, text) is not None
     return None
-
 
 def download(url: str) -> str:
     try:

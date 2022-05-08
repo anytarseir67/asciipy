@@ -12,7 +12,7 @@ from . import palettes
 from io import IOBase
 from typing import List, Tuple, Union, Any
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 _chars = "gS#%@"
 
@@ -56,23 +56,7 @@ class BaseConverter:
             return x
         return col
 
-    def _process_text(self, img: Image.Image) -> Image.Image:
-        lines = []
-        _colors: List[List[Tuple[int, int, int]]] = []
-        for x in range(img.height):
-            line = []
-            colors = []
-            for i in range(img.width):
-                _col = self._get_color(img.getpixel((i, x)))
-                _bright = _col[0] + _col[1] + _col[2]
-                char = self.chars[_remap(_bright, 0, 765, 0, len(self.chars)-1)]
-                line.append(char)
-                colors.append(_col)
-            lines.append(line)
-            _colors.append(colors)
-        return self._draw_text(img, lines, _colors)
-
-    def _draw_text(self, src: Image.Image, text: List[List[str]], colors: List[List[Tuple[int, int, int]]]) -> Image.Image:
+    def _process_image(self, img: Image.Image) -> Image.Image:
         im = Image.new(mode=self.mode, size=(10000, 10000))
         d = ImageDraw.Draw(im)
         _x = 0
@@ -81,13 +65,20 @@ class BaseConverter:
             font = ImageFont.truetype(self.font, 128)
         except AttributeError:
             font = None
-        for i, line in enumerate(text):
-            for x, char in enumerate(line):
-                d.text((_x, _y), char, fill=(colors[i][x]), font=font)
-                _x += d.textsize(char, font=font)[0]
-            _y += d.textsize(char, font=font)[1]
+
+        x_offset = d.textsize(self.chars[-1], font=font)[0]
+        y_offset = d.textsize(self.chars[-1], font=font)[1]
+
+        for x in range(img.height):
+            for i in range(img.width):
+                _col = self._get_color(img.getpixel((i, x)))
+                _bright = _col[0] + _col[1] + _col[2]
+                char = self.chars[_remap(_bright, 0, 765, 0, len(self.chars)-1)]
+                d.text((_x, _y), char, fill=(_col), font=font)
+                _x += x_offset
+            _y += y_offset
             _x = 0
-        width, height = (src.width * d.textsize(char, font=font)[0], src.height *  d.textsize(char, font=font)[1])
+        width, height = (img.width * d.textsize(char, font=font)[0], img.height *  d.textsize(char, font=font)[1])
         im = im.crop((0, 0, width, height))
         return im
 
@@ -106,7 +97,7 @@ class ImageConverter(BaseConverter):
         aspect_ratio = img.width / img.height
         height = int(self.width / (2 * aspect_ratio))
         img = img.resize((self.width, height))
-        final = self._process_text(img)
+        final = self._process_image(img)
         final.save(self.output)
 
 
@@ -127,10 +118,11 @@ class GifConverter(BaseConverter):
         print('WARNING: gif conversion is not yet fully functional, please report any bugs at: https://github.com/anytarseir67/asciipy/issues/new')
         for frame in frames:
             frame = Image.fromarray(frame).convert(self.mode).resize((self.width, height))
-            converted_frames.append(self._process_text(frame))
+            converted_frames.append(self._process_image(frame))
 
+        loop = img.info.get('loop') or 0
         if self._gif:
-            converted_frames.pop(0).save(self.output, save_all=True, append_images=converted_frames, loop=img.info['loop'], duration=img.info['duration'])
+            converted_frames.pop(0).save(self.output, save_all=True, append_images=converted_frames, loop=loop, duration=img.info['duration'])
         else:
             converted_frames[0].save(self.output)
 
@@ -161,7 +153,7 @@ class VideoConverter(BaseConverter):
                 aspect_ratio = img.width / img.height
                 self.height = int(self.width / (2 * aspect_ratio))
                 img = img.resize((self.width, self.height))
-                frame = self._process_text(img)
+                frame = self._process_image(img)
                 frame.save(f'./frames_{self._id}/img{i}.png')
                 if self.progress:
                     print(f"\r{round((i/total_frames)*100)}% complete", end='')
