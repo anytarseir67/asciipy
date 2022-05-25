@@ -20,13 +20,14 @@ def _remap(x, in_min, in_max, out_min, out_max):
     return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)   
 
 class BaseConverter:
-    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=None, font: Any=None, transparent: bool=False) -> None:
+    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=None, font: Any=None, transparent: bool=False, background: bool=False) -> None:
         self.url = False
         self.width: int = width
         self.palette: List[Tuple[int, int, int]] = palette
         self.chars = char_list or _chars
         self.font = font
         self.transparent = transparent
+        self.background = background
         self.mode = "RGBA" if self.transparent else "RGB"
 
     def _process_input(self, _input: Any) -> Any:
@@ -74,6 +75,13 @@ class BaseConverter:
                 _col = self._get_color(img.getpixel((i, x)))
                 _bright = _col[0] + _col[1] + _col[2]
                 char = self.chars[_remap(_bright, 0, 765, 0, len(self.chars)-1)]
+                if self.background:
+                    if self.transparent:
+                        _col2 = (_col[0]-50, _col[1]-50, _col[2]-50, _col[3])
+                    else:
+                        _col2 = (_col[0]-50, _col[1]-50, _col[2]-50)
+                    d.rectangle((_x, _y, _x+x_offset, _y+y_offset), fill=(_col2))
+
                 d.text((_x, _y), char, fill=(_col), font=font)
                 _x += x_offset
             _y += y_offset
@@ -88,8 +96,8 @@ class BaseConverter:
 
 
 class ImageConverter(BaseConverter):
-    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None, transparent: bool=False) -> None:
-        super().__init__(width, palette, char_list, font, transparent)
+    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None, transparent: bool=False, background: bool=False) -> None:
+        super().__init__(width, palette, char_list, font, transparent, background)
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
         super().convert(_input, output)
@@ -102,8 +110,8 @@ class ImageConverter(BaseConverter):
 
 
 class GifConverter(BaseConverter):
-    def __init__(self, width: int = 80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None, transparent: bool=False, *, gif: bool=True) -> None:
-        super().__init__(width, palette, char_list, font, transparent)
+    def __init__(self, width: int = 80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None, transparent: bool=False, background: bool=False, *, gif: bool=True) -> None:
+        super().__init__(width, palette, char_list, font, transparent, background)
         self._gif = gif
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
@@ -128,8 +136,8 @@ class GifConverter(BaseConverter):
 
 
 class VideoConverter(BaseConverter):
-    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None, transparent: bool=False, *, progress: bool=True) -> None:
-        super().__init__(width, palette, char_list, font, transparent)
+    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None, transparent: bool=False, background: bool=False, *, progress: bool=True) -> None:
+        super().__init__(width, palette, char_list, font, transparent, background)
         self.progress: bool = progress
         self.height: int = None
         self.fps: int = None
