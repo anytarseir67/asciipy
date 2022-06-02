@@ -14,7 +14,7 @@ from collections.abc import Iterable
 from io import IOBase
 from typing import List, Tuple, Union, Any
 
-__version__ = "0.0.2"
+__version__ = "0.1.0"
 
 _chars = "gS#%@"
 
