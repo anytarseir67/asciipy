@@ -60,6 +60,12 @@ asciipy provides four classes `ImageConverter`, `GifConverter`, `VideoConverter`
 * takes one extra argument:
 * `bool` **progress**: if a progress indicator should be printed during conversion.
 
+### **BackgroundConfig**:
+* takes 4 positional arguments:
+* `bool` **enabled**: if the background system should be on.
+* `Optional[Union[Tuple[int, int, int], Tuple[int, int, int, int]]]` **color**: replaces the background color, with the provided color.
+* `bool` **alpha**: if the alpha channel should be copied from the source.
+
 ## Palettes:
 custom color palettes can be provided to the constructor of any converter. it should be a list of rgb tuples. the order of the tuples does not matter, however the order **inside** the tuple must be RGB, or you will get unintended colors.
 
@@ -70,12 +76,6 @@ palette = [
     (255, 255, 255)
 ]
 ```
-<!-- enabled: bool=True, color: Tuple[int, int, int]=None, alpha: bool=True -->
-### **BackgroundConfig**:
-* takes 4 positional arguments:
-* `bool` **enabled**: if the background system should be on.
-* `Optional[Union[Tuple[int, int, int], Tuple[int, int, int, int]]]` **color**: replaces the background color, with the provided color.
-* `bool` **alpha**: if the alpha channel should be copied from the source.
 
 
 
