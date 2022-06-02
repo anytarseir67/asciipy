@@ -7,6 +7,8 @@ from math import sqrt
 from random import randint
 from .url_ import urlcheck, download, requestsNotInstalled
 from . import palettes
+from collections.abc import Iterable
+
 
 #typing imports
 from io import IOBase
@@ -19,14 +21,22 @@ _chars = "gS#%@"
 def _remap(x, in_min, in_max, out_min, out_max):
     return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)   
 
+class BackgroundConfig:
+    def __init__(self, *, enabled: bool=True, color: Tuple[int, int, int]=None, alpha: bool=True):
+        self.enabled = enabled
+        self.color = color
+        self.alpha = alpha
+
 class BaseConverter:
-    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=None, font: Any=None, transparent: bool=False, background: bool=False) -> None:
+    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=None, font: Any=None, transparent: bool=False, background: BackgroundConfig=None) -> None:
         self.url = False
         self.width: int = width
         self.palette: List[Tuple[int, int, int]] = palette
         self.chars = char_list or _chars
         self.font = font
         self.transparent = transparent
+        if background == None:
+            background = BackgroundConfig(enabled=False)
         self.background = background
         self.mode = "RGBA" if self.transparent else "RGB"
 
@@ -75,11 +85,19 @@ class BaseConverter:
                 _col = self._get_color(img.getpixel((i, x)))
                 _bright = _col[0] + _col[1] + _col[2]
                 char = self.chars[_remap(_bright, 0, 765, 0, len(self.chars)-1)]
-                if self.background:
-                    if self.transparent:
-                        _col2 = (_col[0]-50, _col[1]-50, _col[2]-50, _col[3])
+                if self.background.enabled:
+                    if self.background.alpha:
+                        if self.background.color == None and self.transparent:
+                            _col2 = (_col[0]-50, _col[1]-50, _col[2]-50, _col[3])
+                        else:
+                            if len(self.background.color) == 3:
+                                _col2 = list(self.background.color)
+                                _col2.append(_col[3])
+                                _col2 = tuple(_col2)
+                            else:
+                                _col2 = self.background.color
                     else:
-                        _col2 = (_col[0]-50, _col[1]-50, _col[2]-50)
+                        _col2 = self.background.color or (_col[0]-50, _col[1]-50, _col[2]-50)
                     d.rectangle((_x, _y, _x+x_offset, _y+y_offset), fill=(_col2))
 
                 d.text((_x, _y), char, fill=(_col), font=font)

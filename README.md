@@ -40,6 +40,7 @@ asciipy provides four classes `ImageConverter`, `GifConverter`, `VideoConverter`
 * `str` **char_list**: optional custom character list from darkest to brightest
 * `os.PathLike, IOBase, str` **font**: optional font used for characters in the output media. supports TrueType and OpenType fonts.
 * `bool` **transparent**: when True, the alpha channel from the input is preserved and applied to the output. otherwise the alpha channel is discarded (defaults to `False`)
+* `bool` **background**: an instance of `asciipy.BackgroundConfig` (defaults to `BackgroundConfig(False, None, True)`)
 
 **Methods**:
 
@@ -69,6 +70,14 @@ palette = [
     (255, 255, 255)
 ]
 ```
+<!-- enabled: bool=True, color: Tuple[int, int, int]=None, alpha: bool=True -->
+### **BackgroundConfig**:
+* takes 4 positional arguments:
+* `bool` **enabled**: if the background system should be on.
+* `Optional[Union[Tuple[int, int, int], Tuple[int, int, int, int]]]` **color**: replaces the background color, with the provided color.
+* `bool` **alpha**: if the alpha channel should be copied from the source.
+
+
 
 ## Python examples:
 
