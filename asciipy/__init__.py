@@ -96,8 +96,12 @@ class BaseConverter:
     def _get_back_color(self, col: Tuple[int, int, int, int]) -> Tuple[int, int, int]:
         if self.background.palette == None:
             if self.background.alpha:
-                if self.background.color == None and self.transparent:
+                if self.background.color == None :
                     _col2 = self._darken_rgb(col[0], col[1], col[2])
+                    if self.transparent:
+                        _col2 = list(_col2)
+                        _col2.append(col[3])
+                        _col2 = tuple(_col2)
                 else:
                     if len(self.background.color) == 3:
                         _col2 = list(self.background.color)
@@ -106,7 +110,7 @@ class BaseConverter:
                     else:
                         _col2 = self.background.color
             else:
-                _col2 = self.background.color or (col[0]-50, col[1]-50, col[2]-50)
+                _col2 = self.background.color or self._darken_rgb(col[0], col[1], col[2])
         else:
             color_diffs = []
             for color in self.background.palette:
@@ -119,7 +123,6 @@ class BaseConverter:
                 x.append(col[3])
                 x = tuple(x)
             _col2 = x
-
         return _col2
 
     def _process_image(self, img: Image.Image) -> Image.Image:
@@ -147,9 +150,9 @@ class BaseConverter:
                     _col2 = self._get_back_color(raw_color)
                     if len(_col2) == 4:
                         if _col2[3] > self.background.back_threshold:
-                            d.rectangle((_x, _y, _x+x_offset, _y+y_offset), fill=(_col2))
+                            d.rectangle((_x, _y, (_x+x_offset)-1, (_y+y_offset)-1), fill=(_col2))
                     else:
-                        d.rectangle((_x, _y, _x+x_offset, _y+y_offset), fill=(_col2))
+                        d.rectangle((_x, _y, (_x+x_offset)-1, (_y+y_offset)-1), fill=(_col2))
 
                 if len(_col) == 4:
                     if _col[3] > self.background.back_threshold:
