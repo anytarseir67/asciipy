@@ -20,25 +20,48 @@ _chars = "gS#%@"
 def _remap(x, in_min, in_max, out_min, out_max):
     return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)   
 
-class BackgroundConfig:
-    """class contanining configuration information for a converters background
+class ConverterConfig:
+    """class contaning configuration for BaseConverter, and its subclasses.
 
     Parameters
     ----------
-    enabled : bool, optional
-        enable the background system when true; note: when no config is passed to a converter, background is disabled , by default True
-    color : Tuple[int, int, int], optional
-        color for the text background, by default None
-    alpha : bool, optional
-        when true, copy the alpha channel from the source media, by default True
-    palette : List[Tuple[int, int, int]], optional
-        optional color palette for the text background (R,G,B) 0-255 (overrides color), by default None
-    back_layer : Tuple[int, int, int], optional
-        color of the "true" background (R,G,B) 0-255 , by default None
-    back_threshold : int, optional
-        any pixel with an alpha less than or equal to this threshold is condisdered part of the "true" background, by default 0
-    darken : float, optional
-        all luma values are multiplied by this number, by default 0.9
+    width : Optional[:class:`int`]
+        width (in characters) of the output media. by default ``80``
+    palette : Optional[List[Tuple[:class:`int`, :class:`int`, :class:`int`]]]
+        custom color palette, list of RGB tuples. by default ``None``
+    char_list : Optional[:class:`str`]
+        custom character list (darkest -> brightest). by default ``gS#%@``
+    font : Optional[:class:`os.PathLike` | :class:`io.IOBase` | :class:`str`]
+        font used for characters in the output media. supports TrueType and OpenType fonts. by default ``None``
+    transparent : Optional[:class:`bool`]
+        when true, the alpha channel from the input is preserved and applied to the output. otherwise the alpha channel is discarded. by default ``False``
+    """
+    def __init__(self, *, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=None, font: Union[os.PathLike, IOBase, str]=None, transparent: bool=False) -> None:
+        self.width = width
+        self.palette = palette
+        self.char_list = char_list
+        self.font = font
+        self.transparent = transparent
+
+class BackgroundConfig:
+    """class contanining configuration information for a converters background.
+
+    Parameters
+    ----------
+    enabled: Optional[:class:`int`]
+        enable the background system when true; note: when no config is passed to a converter, background is disabled. by default ``True``
+    color: Optional[Tuple[:class:`int`, :class:`int`, :class:`int`]]
+        color for the text background. by default ``None``
+    alpha: Optional[:class:`bool`]
+        when true, copy the alpha channel from the source media. by default ``True``
+    palette:  Optional[List[Tuple[:class:`int`. :class:`int`, :class:`int`]]]
+        optional color palette for the text background (R,G,B) 0-255 (overrides color). by default ``None``
+    back_layer: Optional[Tuple[:class:`int`, :class:`int`, :class:`int`]]
+        color of the "true" background (R,G,B) 0-255. by default ``None``
+    back_threshold:  Optional[:class:`int`]
+        any pixel with an alpha less than or equal to this threshold is condisdered part of the "true" background. by default ``0``
+    darken: Optional[:class:`float`]
+        all luma values are multiplied by this number. by default ``0.9``
     """
     def __init__(self, *, enabled: bool=True, color: Tuple[int, int, int]=None, alpha: bool=True, palette: List[Tuple[int, int, int]]=None, back_layer: Tuple[int, int, int]=None, back_threshold: int=0, darken: float=0.9):
         self.enabled = enabled
@@ -50,13 +73,15 @@ class BackgroundConfig:
         self.darken = darken
 
 class BaseConverter:
-    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=None, font: Any=None, transparent: bool=False, background: BackgroundConfig=None) -> None:
+    def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None) -> None:
         self.url = False
-        self.width: int = width
-        self.palette: List[Tuple[int, int, int]] = palette
-        self.chars = char_list or _chars
-        self.font = font
-        self.transparent = transparent
+        if not isinstance(config, ConverterConfig):
+            config = ConverterConfig()
+        self.width: int = config.width
+        self.palette: List[Tuple[int, int, int]] = config.palette
+        self.chars = config.char_list or _chars
+        self.font = config.font
+        self.transparent = config.transparent
         if not isinstance(background, BackgroundConfig):
             background = BackgroundConfig(enabled=False)
         self.background = background
@@ -173,8 +198,8 @@ class BaseConverter:
 
 
 class ImageConverter(BaseConverter):
-    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None, transparent: bool=False, background: bool=False) -> None:
-        super().__init__(width, palette, char_list, font, transparent, background)
+    def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None) -> None:
+        super().__init__(config, background)
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
         super().convert(_input, output)
@@ -187,8 +212,8 @@ class ImageConverter(BaseConverter):
 
 
 class GifConverter(BaseConverter):
-    def __init__(self, width: int = 80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None, transparent: bool=False, background: bool=False, *, gif: bool=True) -> None:
-        super().__init__(width, palette, char_list, font, transparent, background)
+    def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None, *, gif: bool=True) -> None:
+        super().__init__(config, background)
         self._gif = gif
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
@@ -213,8 +238,8 @@ class GifConverter(BaseConverter):
 
 
 class VideoConverter(BaseConverter):
-    def __init__(self, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=_chars, font: Any=None, transparent: bool=False, background: bool=False, *, progress: bool=True) -> None:
-        super().__init__(width, palette, char_list, font, transparent, background)
+    def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None, *, progress: bool=True) -> None:
+        super().__init__(config, background)
         self.progress: bool = progress
         self.height: int = None
         self.fps: int = None
