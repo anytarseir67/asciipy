@@ -1,4 +1,5 @@
 # note: these palettes were not taken from official sources, and my be incorrecet
+
 c64 = [
     (0, 0, 0),
     (0, 0, 170),
@@ -17,6 +18,9 @@ c64 = [
     (255, 119, 119),
     (255, 255, 255)
 ]
+"""
+color palette of the commodore 64.
+"""
 
 nes = [
     (0, 0, 0),
@@ -73,6 +77,9 @@ nes = [
     (255, 255, 109),
     (255, 255, 255)
 ]
+"""
+color palette of the Nintendo Entertainment System (aka  Nintendo Famicom).
+"""
 
 cmd = [
     (0, 55, 218),
@@ -92,6 +99,9 @@ cmd = [
     (242, 242, 242),
     (249, 241, 165)
 ]
+"""
+color palette of the Windows command line.
+"""
 
 grayscale = [
     (0, 0, 0),
@@ -106,3 +116,6 @@ grayscale = [
     (220, 220, 220),
     (255, 255, 255)
 ]
+"""
+gray scale color palette (contains some off-grays).
+"""

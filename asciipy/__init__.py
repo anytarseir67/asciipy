@@ -25,15 +25,15 @@ class ConverterConfig:
 
     Parameters
     ----------
-    width : Optional[:class:`int`]
+    width: Optional[:class:`int`]
         width (in characters) of the output media. by default ``80``
-    palette : Optional[List[Tuple[:class:`int`, :class:`int`, :class:`int`]]]
+    palette: Optional[List[Tuple[:class:`int`, :class:`int`, :class:`int`]]]
         custom color palette, list of RGB tuples. by default ``None``
-    char_list : Optional[:class:`str`]
+    char_list: Optional[:class:`str`]
         custom character list (darkest -> brightest). by default ``gS#%@``
-    font : Optional[:class:`os.PathLike` | :class:`io.IOBase` | :class:`str`]
+    font: Optional[:class:`os.PathLike` | :class:`io.IOBase` | :class:`str`]
         font used for characters in the output media. supports TrueType and OpenType fonts. by default ``None``
-    transparent : Optional[:class:`bool`]
+    transparent: Optional[:class:`bool`]
         when true, the alpha channel from the input is preserved and applied to the output. otherwise the alpha channel is discarded. by default ``False``
     """
     def __init__(self, *, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=None, font: Union[os.PathLike, IOBase, str]=None, transparent: bool=False) -> None:
@@ -73,6 +73,28 @@ class BackgroundConfig:
         self.darken = darken
 
 class BaseConverter:
+    """base class for all converters.
+
+    Parameters
+    ----------
+    config: Optional[:class:`ConverterConfig`]
+        configuration for the converter. by default ``ConverterConfig()``
+    background : Optional[:class:`BackgroundConfig`]
+        configuration for the converters background. by default ``BackgroundConfig(enabled=False)``
+
+    Attributes
+    -----------
+    width: :class:`int`
+        width of the converters output in characters.
+    palette: List[Tuple[:class:`int`, :class:`int`, :class:`int`]]
+        the converters color palette.
+    chars: Union[List[:class:`str`], :class:`str`]
+        the converters character set (darkest -> lightest).
+    font: Union[:class:`os.PathLike` | :class:`io.IOBase` | :class:`str`]
+        the converters font.
+    transparent: :class:`bool`
+        if the converter copies the inputs alpha channel.
+    """
     def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None) -> None:
         self.url = False
         if not isinstance(config, ConverterConfig):
@@ -84,8 +106,8 @@ class BaseConverter:
         self.transparent = config.transparent
         if not isinstance(background, BackgroundConfig):
             background = BackgroundConfig(enabled=False)
-        self.background = background
-        self.mode = "RGBA" if self.transparent else "RGB"
+        self._background = background
+        self._mode = "RGBA" if self.transparent else "RGB"
 
     def _process_input(self, _input: Any) -> Any:
         if isinstance(_input, str):
@@ -114,36 +136,36 @@ class BaseConverter:
 
     def _darken_rgb(self, r, g, b):
         h, l, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
-        l = max(min(l * self.background.darken, 1.0), 0.0)
+        l = max(min(l * self._background.darken, 1.0), 0.0)
         r, g, b = colorsys.hls_to_rgb(h, l, s)
         return int(r * 255), int(g * 255), int(b * 255)
 
     def _get_back_color(self, col: Tuple[int, int, int, int]) -> Tuple[int, int, int]:
-        if self.background.palette == None:
-            if self.background.alpha:
-                if self.background.color == None :
+        if self._background.palette == None:
+            if self._background.alpha:
+                if self._background.color == None :
                     _col2 = self._darken_rgb(col[0], col[1], col[2])
                     if self.transparent:
                         _col2 = list(_col2)
                         _col2.append(col[3])
                         _col2 = tuple(_col2)
                 else:
-                    if len(self.background.color) == 3:
-                        _col2 = list(self.background.color)
+                    if len(self._background.color) == 3:
+                        _col2 = list(self._background.color)
                         _col2.append(col[3])
                         _col2 = tuple(_col2)
                     else:
-                        _col2 = self.background.color
+                        _col2 = self._background.color
             else:
-                _col2 = self.background.color or self._darken_rgb(col[0], col[1], col[2])
+                _col2 = self._background.color or self._darken_rgb(col[0], col[1], col[2])
         else:
             color_diffs = []
-            for color in self.background.palette:
+            for color in self._background.palette:
                 cr, cg, cb = color
                 color_diff = sqrt((col[0] - cr)**2 + (col[1] - cg)**2 + (col[2] - cb)**2)
                 color_diffs.append((color_diff, color))
             x = min(color_diffs)[1]
-            if self.background.alpha:
+            if self._background.alpha:
                 x = list(x)
                 x.append(col[3])
                 x = tuple(x)
@@ -151,7 +173,7 @@ class BaseConverter:
         return _col2
 
     def _process_image(self, img: Image.Image) -> Image.Image:
-        im = Image.new(mode=self.mode, size=(10000, 10000))
+        im = Image.new(mode=self._mode, size=(10000, 10000))
         d = ImageDraw.Draw(im)
         _x = 0
         _y = 0
@@ -169,18 +191,18 @@ class BaseConverter:
                 _col = self._get_color(raw_color)
                 _bright = _col[0] + _col[1] + _col[2]
                 char = self.chars[_remap(_bright, 0, 765, 0, len(self.chars)-1)]
-                if self.background.enabled:
-                    if self.background.back_layer != None:
-                        d.rectangle((_x, _y, _x+x_offset, _y+y_offset), fill=(self.background.back_layer))
+                if self._background.enabled:
+                    if self._background.back_layer != None:
+                        d.rectangle((_x, _y, _x+x_offset, _y+y_offset), fill=(self._background.back_layer))
                     _col2 = self._get_back_color(raw_color)
                     if len(_col2) == 4:
-                        if _col2[3] > self.background.back_threshold:
+                        if _col2[3] > self._background.back_threshold:
                             d.rectangle((_x, _y, (_x+x_offset)-1, (_y+y_offset)-1), fill=(_col2))
                     else:
                         d.rectangle((_x, _y, (_x+x_offset)-1, (_y+y_offset)-1), fill=(_col2))
 
                 if len(_col) == 4:
-                    if _col[3] > self.background.back_threshold:
+                    if _col[3] > self._background.back_threshold:
                         d.text((_x, _y), char, fill=(_col), font=font)
                 else:
                     d.text((_x, _y), char, fill=(_col), font=font)
@@ -193,17 +215,65 @@ class BaseConverter:
         return im
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
+        """method to convert media, implemented by subclasses
+
+        Parameters
+        ----------
+        input: Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            input media to convert.
+        output: Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            destination fron the output media.
+
+        Raises
+        ------
+        :class:`NotImplementedError`
+            method is only implemented in subclasses.
+        """
         self.input = self._process_input(_input)
         self.output = output
+        if type(self) == BaseConverter:
+            raise NotImplementedError("method only implemented in subclasses.")
 
 
 class ImageConverter(BaseConverter):
+    """converts images to ascii-images
+
+    Parameters
+    ----------
+    config: Optional[:class:`ConverterConfig`]
+        configuration for the converter. by default ``ConverterConfig()``
+    background : Optional[:class:`BackgroundConfig`]
+        configuration for the converters background. by default ``BackgroundConfig(enabled=False)``
+
+    Attributes
+    -----------
+    width: :class:`int`
+        width of the converters output in characters.
+    palette: List[Tuple[:class:`int`, :class:`int`, :class:`int`]]
+        the converters color palette.
+    chars: Union[List[:class:`str`], :class:`str`]
+        the converters character set (darkest -> lightest).
+    font: Union[:class:`os.PathLike` | :class:`io.IOBase` | :class:`str`]
+        the converters font.
+    transparent: :class:`bool`
+        if the converter copies the inputs alpha channel.
+    """
+
     def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None) -> None:
         super().__init__(config, background)
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
+        """method to convert images to ascii-images
+
+        Parameters
+        ----------
+        input: Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            input image to convert.
+        output: Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            destination fron the output image.
+        """
         super().convert(_input, output)
-        img = Image.open(self.input).convert(self.mode)
+        img = Image.open(self.input).convert(self._mode)
         aspect_ratio = img.width / img.height
         height = int(self.width / (2 * aspect_ratio))
         img = img.resize((self.width, height))
@@ -212,11 +282,44 @@ class ImageConverter(BaseConverter):
 
 
 class GifConverter(BaseConverter):
+    """converts gifs to ascii-gifs (or images)
+
+    Parameters
+    ----------
+    config: Optional[:class:`ConverterConfig`]
+        configuration for the converter. by default ``ConverterConfig()``
+    background : Optional[:class:`BackgroundConfig`]
+        configuration for the converters background. by default ``BackgroundConfig(enabled=False)``
+    gif: Optional[:class:`bool`]
+        when true, output all frames converted to ascii, otherwise output only the first frame. by default ``True``
+
+    Attributes
+    -----------
+    width: :class:`int`
+        width of the converters output in characters.
+    palette: List[Tuple[:class:`int`, :class:`int`, :class:`int`]]
+        the converters color palette.
+    chars: Union[List[:class:`str`], :class:`str`]
+        the converters character set (darkest -> lightest).
+    font: Union[:class:`os.PathLike` | :class:`io.IOBase` | :class:`str`]
+        the converters font.
+    transparent: :class:`bool`
+        if the converter copies the inputs alpha channel.
+    """
     def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None, *, gif: bool=True) -> None:
         super().__init__(config, background)
         self._gif = gif
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
+        """method to convert gifs to ascii-gifs (or images)
+
+        Parameters
+        ----------
+        input: Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            input gif to convert.
+        output: Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            destination fron the output gif (or image).
+        """
         super().convert(_input, output)
         img = Image.open(self.input)
         img.load()
@@ -227,7 +330,7 @@ class GifConverter(BaseConverter):
         # print is here so it doesn't falsely warn when using the default CLI
         print('WARNING: gif conversion is not yet fully functional, please report any bugs at: https://github.com/anytarseir67/asciipy/issues/new')
         for frame in frames:
-            frame = Image.fromarray(frame).convert(self.mode).resize((self.width, height))
+            frame = Image.fromarray(frame).convert(self._mode).resize((self.width, height))
             converted_frames.append(self._process_image(frame))
 
         loop = img.info.get('loop') or 0
@@ -238,6 +341,30 @@ class GifConverter(BaseConverter):
 
 
 class VideoConverter(BaseConverter):
+    """converts videos to ascii-videos
+
+    Parameters
+    ----------
+    config: Optional[:class:`ConverterConfig`]
+        configuration for the converter. by default ``ConverterConfig()``
+    background: Optional[:class:`BackgroundConfig`]
+        configuration for the converters background. by default ``BackgroundConfig(enabled=False)``
+    progress: Optional[:class:`bool`]
+        when true, print the percentage completion after each frame. by default ``True``
+
+    Attributes
+    -----------
+    width: :class:`int`
+        width of the converters output in characters.
+    palette: List[Tuple[:class:`int`, :class:`int`, :class:`int`]]
+        the converters color palette.
+    chars: Union[List[:class:`str`], :class:`str`]
+        the converters character set (darkest -> lightest).
+    font: Union[:class:`os.PathLike` | :class:`io.IOBase` | :class:`str`]
+        the converters font.
+    transparent: :class:`bool`
+        if the converter copies the inputs alpha channel.
+    """
     def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None, *, progress: bool=True) -> None:
         super().__init__(config, background)
         self.progress: bool = progress
@@ -247,6 +374,15 @@ class VideoConverter(BaseConverter):
         # used in the frames path so more than one converter can run in the same wd
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
+        """method to convert videos to ascii-videos
+
+        Parameters
+        ----------
+        input: Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            input video to convert.
+        output: Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            destination fron the output video.
+        """
         super().convert(_input, output)
         try:
             os.mkdir(f'./frames_{self._id}')
@@ -259,7 +395,7 @@ class VideoConverter(BaseConverter):
                 if img is None: break
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(img)
-                img = img.convert(self.mode)
+                img = img.convert(self._mode)
                 aspect_ratio = img.width / img.height
                 self.height = int(self.width / (2 * aspect_ratio))
                 img = img.resize((self.width, self.height))
