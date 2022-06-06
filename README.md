@@ -61,7 +61,7 @@ asciipy provides four classes `ImageConverter`, `GifConverter`, `VideoConverter`
 * `bool` **progress**: if a progress indicator should be printed during conversion.
 
 ### **BackgroundConfig**:
-* takes 4 positional arguments:
+* takes 4 keyword arguments:
 * `bool` **enabled**: if the background system should be on.
 * `Optional[Union[Tuple[int, int, int], Tuple[int, int, int, int]]]` **color**: replaces the background color, with the provided color.
 * `bool` **alpha**: if the alpha channel should be copied from the source.
