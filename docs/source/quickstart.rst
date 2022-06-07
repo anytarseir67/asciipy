@@ -1,6 +1,6 @@
 .. highlight:: python
 
-quickstart
+Quickstart
 ===========
 
 Basic setup
