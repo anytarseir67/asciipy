@@ -13,7 +13,7 @@ import colorsys
 from io import IOBase
 from typing import List, Tuple, Union, Any
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 _chars = "gS#%@"
 
