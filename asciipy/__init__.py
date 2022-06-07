@@ -33,14 +33,17 @@ class ConverterConfig:
         custom character list (darkest -> brightest). by default ``gS#%@``
     font: Optional[:class:`os.PathLike` | :class:`io.IOBase` | :class:`str`]
         font used for characters in the output media. supports TrueType and OpenType fonts. by default ``None``
+    font_size: Optional[:class:`int`]
+        size of the font in points (font must support requested size). by default ``None``
     transparent: Optional[:class:`bool`]
         when true, the alpha channel from the input is preserved and applied to the output. otherwise the alpha channel is discarded. by default ``False``
     """
-    def __init__(self, *, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=None, font: Union[os.PathLike, IOBase, str]=None, transparent: bool=False) -> None:
+    def __init__(self, *, width: int=80, palette: List[Tuple[int, int, int]]=None, char_list: str=None, font: Union[os.PathLike, IOBase, str]=None, font_size: int=None, transparent: bool=False) -> None:
         self.width = width
         self.palette = palette
         self.char_list = char_list
         self.font = font
+        self.font_size = font_size
         self.transparent = transparent
 
 class BackgroundConfig:
@@ -103,6 +106,7 @@ class BaseConverter:
         self.palette: List[Tuple[int, int, int]] = config.palette
         self.chars = config.char_list or _chars
         self.font = config.font
+        self.font_size = config.font_size
         self.transparent = config.transparent
         if not isinstance(background, BackgroundConfig):
             background = BackgroundConfig(enabled=False)
@@ -178,7 +182,7 @@ class BaseConverter:
         _x = 0
         _y = 0
         try:
-            font = ImageFont.truetype(self.font, 128)
+            font = ImageFont.truetype(self.font)
         except AttributeError:
             font = None
 
