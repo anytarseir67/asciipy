@@ -36,6 +36,7 @@ setup(
             'sphinxcontrib_trio',
             'sphinxcontrib-websupport',
             'typing-extensions',
+            'myst_parser'
         ],
     },
 )
