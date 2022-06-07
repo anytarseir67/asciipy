@@ -30,6 +30,13 @@ setup(
     extras_require={
         "full": ["yt-dlp", "requests"],
         "youtube": ["yt-dlp"],
-        "url": ["requests"]
+        "url": ["requests"],
+        'docs': [
+            'sphinx',
+            'sphinxcontrib_trio',
+            'sphinxcontrib-websupport',
+            'typing-extensions',
+            'myst_parser'
+        ],
     },
 )
