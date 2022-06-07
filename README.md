@@ -4,8 +4,8 @@
 `pip install asciipy-any`
 
 ## Example output:
-![image example](https://github.com/anytarseir67/asciipy/blob/main/examples/peepo-juicebox.png?raw=True) 
-![gif example](https://github.com/anytarseir67/asciipy/blob/main/examples/bonk.gif?raw=True)
+![image example](https://github.com/anytarseir67/asciipy/blob/master/examples/peepo-juicebox.png?raw=True) 
+![gif example](https://github.com/anytarseir67/asciipy/blob/master/examples/bonk.gif?raw=True)
 
 additional examples can be found in `/examples/`
 
