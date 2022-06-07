@@ -162,4 +162,4 @@ asciipy/downloaded
 *.ttf
 *.otf
 asciipy/time.bat
-!docs/images/*.png
+!docs/source/images/*.png
