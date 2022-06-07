@@ -18,7 +18,9 @@ __version__ = "0.2.0"
 _chars = "gS#%@"
 
 def _remap(x, in_min, in_max, out_min, out_max):
-    return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)   
+    ind = round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
+    if ind > out_max: ind = out_max
+    return ind
 
 class ConverterConfig:
     """class contaning configuration for BaseConverter, and its subclasses.
@@ -104,7 +106,9 @@ class BaseConverter:
             config = ConverterConfig()
         self.width: int = config.width
         self.palette: List[Tuple[int, int, int]] = config.palette
-        self.chars = config.char_list or _chars
+        if not isinstance(config.char_list, list) or not isinstance(config.char_list, str):
+            config.char_list = _chars
+        self.chars = config.char_list
         self.font = config.font
         self.font_size = config.font_size
         self.transparent = config.transparent
@@ -182,7 +186,7 @@ class BaseConverter:
         _x = 0
         _y = 0
         try:
-            font = ImageFont.truetype(self.font)
+            font = ImageFont.truetype(self.font, self.font_size)
         except AttributeError:
             font = None
 
@@ -417,7 +421,7 @@ class VideoConverter(BaseConverter):
 
     def _combine(self) -> None:
         os.system(f'ffmpeg -r {self.fps} -i ./frames_{self._id}/img%01d.png -y temp.mp4')
-        os.system(f'ffmpeg -i temp.mp4 -i "{self.input}" -map 0:v -map 1:a -y {self.output}')
+        os.system(f'ffmpeg -i temp.mp4 -i "{self.input}" -map 0:v -map 1:a? -y {self.output}')
 
     def _clear(self) -> None:
         os.remove('./temp.mp4')

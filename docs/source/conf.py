@@ -83,7 +83,7 @@ html_experimental_html5_writer = True
 #
 html_theme = 'basic'
 
-html_favicon = './images/logo2.ico'
+html_favicon = './images/logo.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
