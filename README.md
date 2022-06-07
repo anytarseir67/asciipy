@@ -29,6 +29,10 @@ additional examples can be found in `/examples/`
 * `asciipy-any[youtube]` will install `yt-dlp` to enable downloading youtube videos.
 
 ## Python usage:
+
+* you can find our documentation here: https://asciipy-any.readthedocs.io/
+
+<!-- ## Python usage:
 asciipy provides four classes `ImageConverter`, `GifConverter`, `VideoConverter`, and `BaseConverter`
 
 * *note:* `input` fields can accept a url to convert, instead of local media or buffers.
@@ -74,9 +78,9 @@ example (black and white):
 palette = [
     (0, 0, 0),
     (255, 255, 255)
-]
+] 
 ```
-
+-->
 
 
 ## Python examples:
@@ -95,6 +99,10 @@ print(f"{sys.argv[1]} converted and written to ./ascii.png")
 * ~~proper gif support~~ (mostly done, but still to buggy to be considered finished)
 * ability to write output as html
 * ability to convert vectors (not sure how i could even go about this)
+
+## TODO:
+* add proper examples to the repo and the docs.
+* document 'hacky' things like overriding internal methods for more complex behavior.
 
 ## need help?
 * [join my discord server!](https://discord.gg/fDQPCBybVJ)
