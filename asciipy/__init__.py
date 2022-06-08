@@ -8,6 +8,9 @@ from random import randint
 from .url_ import urlcheck, download, requestsNotInstalled
 from . import palettes
 import colorsys
+import multiprocessing
+from itertools import islice
+from copy import deepcopy
 
 #typing imports
 from io import IOBase
@@ -359,6 +362,8 @@ class VideoConverter(BaseConverter):
         configuration for the converters background. by default ``BackgroundConfig(enabled=False)``
     progress: Optional[:class:`bool`]
         when true, print the percentage completion after each frame. by default ``True``
+    converters: Optional[:class:`int`]
+        number of converter processes to spawn. by default ``1``
 
     Attributes
     -----------
@@ -373,13 +378,26 @@ class VideoConverter(BaseConverter):
     transparent: :class:`bool`
         if the converter copies the inputs alpha channel.
     """
-    def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None, *, progress: bool=True) -> None:
+    def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None, *, progress: bool=True, converters: int=1) -> None:
         super().__init__(config, background)
         self.progress: bool = progress
         self.height: int = None
         self.fps: int = None
-        self._id: int = randint(0, 999999) 
+        self._id: int = randint(0, 999999)
+        self._converters = converters
         # used in the frames path so more than one converter can run in the same wd
+
+    def _render_process(self, frames: List[Image.Image], num: int) -> None:
+        for frame in frames:
+            _ascii = self._process_image(frame)
+            _ascii.save(f'./frames_{self._id}/img{num}.png')
+            num += 1
+        return 
+
+    @staticmethod
+    def _chunk(it: list, size: int) -> ...:
+        it = iter(it)
+        return iter(lambda: tuple(islice(it, size)), ())
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
         """method to convert videos to ascii-videos
@@ -396,22 +414,38 @@ class VideoConverter(BaseConverter):
             os.mkdir(f'./frames_{self._id}')
             vid = cv2.VideoCapture(self.input)
             self.fps = vid.get(cv2.CAP_PROP_FPS)
-            total_frames = vid.get(cv2.CAP_PROP_FRAME_COUNT)
+            # total_frames = vid.get(cv2.CAP_PROP_FRAME_COUNT)
             i = 0
+            frames = []
             while(vid.isOpened()):  
                 img = vid.read()[1]
                 if img is None: break
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(img)
                 img = img.convert(self._mode)
-                aspect_ratio = img.width / img.height
-                self.height = int(self.width / (2 * aspect_ratio))
+                if i == 0:
+                    aspect_ratio = img.width / img.height
+                    self.height = int(self.width / (2 * aspect_ratio))
+
                 img = img.resize((self.width, self.height))
-                frame = self._process_image(img)
-                frame.save(f'./frames_{self._id}/img{i}.png')
-                if self.progress:
-                    print(f"\r{round((i/total_frames)*100)}% complete", end='')
+                frames.append(img)
                 i+=1
+            chunk_len = round(len(frames)/self._converters)
+            chunks = list(self._chunk(frames, chunk_len))
+            cur = 0
+            processes = []
+            for chunk in chunks:
+                p = multiprocessing.Process(target=self._render_process, args=(chunk, cur,))
+                p.start()
+                processes.append(p)
+                cur += chunk_len
+
+            while not all([p.is_alive() for p in processes]):
+                print('yikes')
+
+            for p in processes:
+                p.join()
+
             self._combine()
         except KeyboardInterrupt:
             print('conversion interupted.')
