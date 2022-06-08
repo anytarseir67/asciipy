@@ -14,3 +14,4 @@ Pages
    quickstart
    api
    cli
+   future
