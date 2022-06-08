@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/asciipy-any/badge/?version=latest)](https://asciipy-any.readthedocs.io/?badge=latest)
+
 # asciipy
  python library and cli tool to convert images and videos to ascii
 
