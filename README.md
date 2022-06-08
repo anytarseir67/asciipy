@@ -1,4 +1,6 @@
 [![Documentation Status](https://readthedocs.org/projects/asciipy-any/badge/?version=latest)](https://asciipy-any.readthedocs.io/?badge=latest)
+[![pypi version](https://img.shields.io/pypi/v/asciipy-any?color=0F8&label=PyPi&logo=PyPi&logoColor=0F8&style=plastic)](https://pypi.org/project/asciipy-any/)
+[![Discord](https://img.shields.io/discord/735647676086878238?color=697Ec4&label=discord&logo=discord&logoColor=697Ec4)](https://discord.gg/fDQPCBybVJ)
 
 # asciipy
  python library and cli tool to convert images and videos to ascii
