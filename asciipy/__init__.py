@@ -10,7 +10,7 @@ from . import palettes
 import colorsys
 import multiprocessing
 from itertools import islice
-from copy import deepcopy
+import sys
 
 #typing imports
 from io import IOBase
@@ -361,7 +361,7 @@ class VideoConverter(BaseConverter):
     background: Optional[:class:`BackgroundConfig`]
         configuration for the converters background. by default ``BackgroundConfig(enabled=False)``
     progress: Optional[:class:`bool`]
-        when true, print the percentage completion after each frame. by default ``True``
+        when true, print the percentage completion after each frame (disabled when ``converters > 1``). by default ``True``
     converters: Optional[:class:`int`]
         number of converter processes to spawn. by default ``1``
 
@@ -388,11 +388,14 @@ class VideoConverter(BaseConverter):
         # used in the frames path so more than one converter can run in the same wd
 
     def _render_process(self, frames: List[Image.Image], num: int) -> None:
-        for frame in frames:
-            _ascii = self._process_image(frame)
-            _ascii.save(f'./frames_{self._id}/img{num}.png')
-            num += 1
-        return 
+        try:
+            for frame in frames:
+                _ascii = self._process_image(frame)
+                _ascii.save(f'./frames_{self._id}/img{num}.png')
+                num += 1
+            return 
+        except KeyboardInterrupt:
+            sys.exit()
 
     @staticmethod
     def _chunk(it: list, size: int) -> ...:
@@ -414,7 +417,7 @@ class VideoConverter(BaseConverter):
             os.mkdir(f'./frames_{self._id}')
             vid = cv2.VideoCapture(self.input)
             self.fps = vid.get(cv2.CAP_PROP_FPS)
-            # total_frames = vid.get(cv2.CAP_PROP_FRAME_COUNT)
+            total_frames = vid.get(cv2.CAP_PROP_FRAME_COUNT)
             i = 0
             frames = []
             while(vid.isOpened()):  
@@ -426,25 +429,33 @@ class VideoConverter(BaseConverter):
                 if i == 0:
                     aspect_ratio = img.width / img.height
                     self.height = int(self.width / (2 * aspect_ratio))
-
                 img = img.resize((self.width, self.height))
-                frames.append(img)
+                if self._converters == 1:
+                    frame = self._process_image(img)
+                    frame.save(f'./frames_{self._id}/img{i}.png')
+                    if self.progress:
+                        print(f"\r{round((i/total_frames)*100)}% complete", end='')
+                else:
+                    img = img.resize((self.width, self.height))
+                    frames.append(img)
                 i+=1
-            chunk_len = round(len(frames)/self._converters)
-            chunks = list(self._chunk(frames, chunk_len))
-            cur = 0
-            processes = []
-            for chunk in chunks:
-                p = multiprocessing.Process(target=self._render_process, args=(chunk, cur,))
-                p.start()
-                processes.append(p)
-                cur += chunk_len
 
-            while not all([p.is_alive() for p in processes]):
-                print('yikes')
+            if self._converters > 1:
+                chunk_len = round(len(frames)/self._converters)
+                chunks = list(self._chunk(frames, chunk_len))
+                cur = 0
+                processes = []
+                for chunk in chunks:
+                    p = multiprocessing.Process(target=self._render_process, args=(chunk, cur,))
+                    p.start()
+                    processes.append(p)
+                    cur += chunk_len
 
-            for p in processes:
-                p.join()
+                while not all([p.is_alive() for p in processes]):
+                    pass
+
+                for p in processes:
+                    p.join()
 
             self._combine()
         except KeyboardInterrupt:
@@ -458,7 +469,10 @@ class VideoConverter(BaseConverter):
         os.system(f'ffmpeg -i temp.mp4 -i "{self.input}" -map 0:v -map 1:a? -y {self.output}')
 
     def _clear(self) -> None:
-        os.remove('./temp.mp4')
+        try:
+            os.remove('./temp.mp4')
+        except FileNotFoundError:
+            pass
         for f in glob.glob(f'./frames_{self._id}/*'):
             os.remove(f)
         os.rmdir(f'./frames_{self._id}')
