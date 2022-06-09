@@ -5,8 +5,6 @@ import os
 from imageio import mimread
 from math import sqrt
 from random import randint
-from .url_ import urlcheck, download, requestsNotInstalled
-from . import palettes
 import colorsys
 import multiprocessing
 from itertools import islice
@@ -15,6 +13,10 @@ import sys
 #typing imports
 from io import IOBase
 from typing import List, Tuple, Union, Any
+
+# lib imports
+from .url_ import urlcheck, download, requestsNotInstalled
+from . import palettes
 
 __version__ = "0.2.1"
 
@@ -282,6 +284,10 @@ class ImageConverter(BaseConverter):
             input image to convert.
         output: Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
             destination fron the output image.
+            
+        Returns
+        -------
+        None
         """
         super().convert(_input, output)
         img = Image.open(self.input).convert(self._mode)
@@ -330,6 +336,10 @@ class GifConverter(BaseConverter):
             input gif to convert.
         output: Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
             destination fron the output gif (or image).
+
+        Returns
+        -------
+        None
         """
         super().convert(_input, output)
         img = Image.open(self.input)
@@ -377,6 +387,8 @@ class VideoConverter(BaseConverter):
         the converters font.
     transparent: :class:`bool`
         if the converter copies the inputs alpha channel.
+    converters: :class:`int`
+        number of converter processes what will be spawned when :meth:`~asciipy.VideoConverter.convert` is called.
     """
     def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None, *, progress: bool=True, converters: int=1) -> None:
         super().__init__(config, background)
@@ -384,7 +396,7 @@ class VideoConverter(BaseConverter):
         self.height: int = None
         self.fps: int = None
         self._id: int = randint(0, 999999)
-        self._converters = converters
+        self.converters = converters
         # used in the frames path so more than one converter can run in the same wd
 
     def _render_process(self, frames: List[Image.Image], num: int) -> None:
@@ -411,6 +423,10 @@ class VideoConverter(BaseConverter):
             input video to convert.
         output: Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
             destination fron the output video.
+
+        Returns
+        -------
+        None
         """
         super().convert(_input, output)
         try:
@@ -430,18 +446,17 @@ class VideoConverter(BaseConverter):
                     aspect_ratio = img.width / img.height
                     self.height = int(self.width / (2 * aspect_ratio))
                 img = img.resize((self.width, self.height))
-                if self._converters == 1:
+                if self.converters == 1:
                     frame = self._process_image(img)
                     frame.save(f'./frames_{self._id}/img{i}.png')
                     if self.progress:
                         print(f"\r{round((i/total_frames)*100)}% complete", end='')
                 else:
-                    img = img.resize((self.width, self.height))
                     frames.append(img)
                 i+=1
 
-            if self._converters > 1:
-                chunk_len = round(len(frames)/self._converters)
+            if self.converters > 1:
+                chunk_len = round(len(frames)/self.converters)
                 chunks = list(self._chunk(frames, chunk_len))
                 cur = 0
                 processes = []
