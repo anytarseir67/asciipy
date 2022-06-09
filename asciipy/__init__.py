@@ -18,7 +18,7 @@ from typing import List, Tuple, Union, Any
 from .url_ import urlcheck, download, requestsNotInstalled
 from . import palettes
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 
 _chars = "gS#%@"
 
