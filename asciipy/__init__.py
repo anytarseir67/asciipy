@@ -374,7 +374,7 @@ class VideoConverter(BaseConverter):
     background: Optional[:class:`BackgroundConfig`]
         configuration for the converters background. by default ``BackgroundConfig(enabled=False)``
     progress: Optional[:class:`bool`]
-        when true, print the percentage completion after each frame (disabled when ``converters > 1``). by default ``True``
+        when true, print the percentage completion after each frame. by default ``True``
     converters: Optional[:class:`int`]
         number of converter processes to spawn. by default ``1``
 
