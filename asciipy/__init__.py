@@ -8,7 +8,7 @@ from random import randint
 import colorsys
 import multiprocessing
 from itertools import islice
-import sys
+from datetime import datetime
 
 #typing imports
 from io import IOBase
@@ -179,9 +179,12 @@ class BaseConverter:
                 color_diffs.append((color_diff, color))
             x = min(color_diffs)[1]
             if self._background.alpha:
-                x = list(x)
-                x.append(col[3])
-                x = tuple(x)
+                try:
+                    x = list(x)
+                    x.append(col[3])
+                    x = tuple(x)
+                except IndexError:
+                    x = tuple(x)
             _col2 = x
         return _col2
 
@@ -395,19 +398,21 @@ class VideoConverter(BaseConverter):
         self.progress: bool = progress
         self.height: int = None
         self.fps: int = None
-        self._id: int = randint(0, 999999)
         self.converters = converters
+        self._id: int = randint(0, 999999)
         # used in the frames path so more than one converter can run in the same wd
 
-    def _render_process(self, frames: List[Image.Image], num: int) -> None:
+    def _render_process(self, frames: List[Image.Image], num: int, count: "multiprocessing.Value[int]") -> None:
         try:
             for frame in frames:
                 _ascii = self._process_image(frame)
                 _ascii.save(f'./frames_{self._id}/img{num}.png')
                 num += 1
+                with count.get_lock():
+                   count.value += 1
             return 
         except KeyboardInterrupt:
-            sys.exit()
+            return
 
     @staticmethod
     def _chunk(it: list, size: int) -> ...:
@@ -429,6 +434,7 @@ class VideoConverter(BaseConverter):
         None
         """
         super().convert(_input, output)
+        start = datetime.now()
         try:
             os.mkdir(f'./frames_{self._id}')
             vid = cv2.VideoCapture(self.input)
@@ -456,32 +462,45 @@ class VideoConverter(BaseConverter):
                 i+=1
 
             if self.converters > 1:
+                print("WARNING: multiprocess conversion is not yet finished, please report any bugs at: https://github.com/anytarseir67/asciipy/issues/new")
+                count = multiprocessing.Value('i', 0)
                 chunk_len = round(len(frames)/self.converters)
                 chunks = list(self._chunk(frames, chunk_len))
                 cur = 0
                 processes = []
                 for chunk in chunks:
-                    p = multiprocessing.Process(target=self._render_process, args=(chunk, cur,))
+                    p = multiprocessing.Process(target=self._render_process, args=(chunk, cur, count,))
                     p.start()
                     processes.append(p)
                     cur += chunk_len
 
-                while not all([p.is_alive() for p in processes]):
-                    pass
+                while all([p.is_alive() for p in processes]):
+                    if self.progress:
+                        with count.get_lock():
+                            print(f"\r{round((count.value/total_frames)*100)}% complete. ", end='')
+                if self.progress:
+                    print('\n')
 
                 for p in processes:
                     p.join()
 
             self._combine()
         except KeyboardInterrupt:
+            for p in processes:
+                p.terminate()
+
             print('conversion interupted.')
+        except Exception as e:
+            raise e
+        else:
+            print(f"conversion completed after {datetime.now() - start}")
         finally:
             print('clearing temp files...')
             self._clear()
 
     def _combine(self) -> None:
-        os.system(f'ffmpeg -r {self.fps} -i ./frames_{self._id}/img%01d.png -y temp.mp4')
-        os.system(f'ffmpeg -i temp.mp4 -i "{self.input}" -map 0:v -map 1:a? -y {self.output}')
+        os.system(f'ffmpeg -loglevel quiet -hide_banner -nostats -r {self.fps} -i ./frames_{self._id}/img%01d.png -y temp.mp4')
+        os.system(f'ffmpeg -loglevel quiet -hide_banner -nostats -i temp.mp4 -i "{self.input}" -map 0:v -map 1:a? -y {self.output}')
 
     def _clear(self) -> None:
         try:
