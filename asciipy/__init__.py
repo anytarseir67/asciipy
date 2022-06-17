@@ -6,9 +6,9 @@ from imageio import mimread
 from math import sqrt
 from random import randint
 import colorsys
-import multiprocessing
 from itertools import islice
 from datetime import datetime
+import multiprocessing
 
 #typing imports
 from io import IOBase
@@ -106,7 +106,6 @@ class BaseConverter:
         if the converter copies the inputs alpha channel.
     """
     def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None) -> None:
-        self.url = False
         if not isinstance(config, ConverterConfig):
             config = ConverterConfig()
         self.width: int = config.width
@@ -126,7 +125,6 @@ class BaseConverter:
         if isinstance(_input, str):
             check = urlcheck(_input)
             if check:
-                self.url = True
                 return f"./downloaded/{download(_input)}"
             elif check == None:
                 raise requestsNotInstalled("requests is required to convert from urls, install it directly, or install asciipy-any[url]")
@@ -231,7 +229,7 @@ class BaseConverter:
         return im
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
-        """method to convert media, implemented by subclasses
+        """method to convert media, implemented by subclasses.
 
         Parameters
         ----------
@@ -250,9 +248,30 @@ class BaseConverter:
         if type(self) == BaseConverter:
             raise NotImplementedError("method only implemented in subclasses.")
 
+    def on_image(self, frame: Union[os.PathLike, IOBase, str]) -> Any:
+        """method called after an image or frame is converted and saved, implemented by subclasses or with :deco:`~asciipy.BaseConverter.image`.
+
+        Parameters
+        ----------
+        frame : Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            path to the saved image
+
+        Raises
+        ------
+        :class:`NotImplementedError`
+            method is only implemented in subclasses.
+        """
+        raise NotImplementedError("method only implemented in subclasses.")
+
+    def image(self, func):
+        """A decorator that sets the decorated function to be called after an image or frame is converted and saved. 
+        see :meth:`~asciipy.BaseConverter.on_image` for more details.
+        """
+        self.on_image = func
+
 
 class ImageConverter(BaseConverter):
-    """converts images to ascii-images
+    """converts images to ascii-images.
 
     Parameters
     ----------
@@ -278,8 +297,17 @@ class ImageConverter(BaseConverter):
     def __init__(self, config: ConverterConfig=None, background: BackgroundConfig=None) -> None:
         super().__init__(config, background)
 
+    def on_image(self, frame: Union[os.PathLike, IOBase, str]) -> Any:
+        """method called after an image or frame is converted and saved, implemented with :deco:`~asciipy.ImageConverter.image`.
+
+        Parameters
+        ----------
+        frame : Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            path to the saved image
+        """
+
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
-        """method to convert images to ascii-images
+        """method to convert images to ascii-images.
 
         Parameters
         ----------
@@ -299,10 +327,11 @@ class ImageConverter(BaseConverter):
         img = img.resize((self.width, height))
         final = self._process_image(img)
         final.save(self.output)
+        self.on_image(self.output)
 
 
 class GifConverter(BaseConverter):
-    """converts gifs to ascii-gifs (or images)
+    """converts gifs to ascii-gifs (or images).
 
     Parameters
     ----------
@@ -330,8 +359,17 @@ class GifConverter(BaseConverter):
         super().__init__(config, background)
         self._gif = gif
 
+    def on_image(self, frame: Union[os.PathLike, IOBase, str]) -> Any:
+        """method called after a gif or image is converted and saved, implemented with :deco:`~asciipy.GifConverter.image`.
+
+        Parameters
+        ----------
+        frame : Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            path to the saved gif/image
+        """
+
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
-        """method to convert gifs to ascii-gifs (or images)
+        """method to convert gifs to ascii-gifs (or images).
 
         Parameters
         ----------
@@ -362,10 +400,11 @@ class GifConverter(BaseConverter):
             converted_frames.pop(0).save(self.output, save_all=True, append_images=converted_frames, loop=loop, duration=img.info['duration'])
         else:
             converted_frames[0].save(self.output)
+        self.on_image(self.output)
 
 
 class VideoConverter(BaseConverter):
-    """converts videos to ascii-videos
+    """converts videos to ascii-videos.
 
     Parameters
     ----------
@@ -398,9 +437,31 @@ class VideoConverter(BaseConverter):
         self.progress: bool = progress
         self.height: int = None
         self.fps: int = None
-        self.converters = converters
+        self.converters: int = converters
         self._id: int = randint(0, 999999)
         # used in the frames path so more than one converter can run in the same wd
+
+    def image(self, func):
+        """A decorator that calls the decorated function after a frame is converted and saved.
+        see :meth:`~asciipy.VideoConverter.on_image` for more details.
+
+        Raises
+        ------
+        :class:`Exception`
+            raised when `self.converters > 1` due to not being able to pickle objects with overridden methods.
+        """
+        if self.converters > 1:
+            raise Exception("`on_image` can not be used when `self.converters > 1` due to pickling limitations.")
+        self.on_image = func
+
+    def on_image(self, frame: Union[os.PathLike, IOBase, str]) -> Any:
+        """method called after a frame is converted and saved, implemented with :deco:`~asciipy.VideoConverter.image`.
+
+        Parameters
+        ----------
+        frame : Union[:class:`os.PathLike`, :class:`io.IOBase`, :class:`str`]
+            path to the saved frame
+        """
 
     def _render_process(self, frames: List[Image.Image], num: int, count: "multiprocessing.Value[int]") -> None:
         try:
@@ -420,7 +481,7 @@ class VideoConverter(BaseConverter):
         return iter(lambda: tuple(islice(it, size)), ())
 
     def convert(self, _input: Union[os.PathLike, IOBase, str], output: Union[os.PathLike, IOBase, str]) -> None:
-        """method to convert videos to ascii-videos
+        """method to convert videos to ascii-videos.
 
         Parameters
         ----------
@@ -456,7 +517,7 @@ class VideoConverter(BaseConverter):
                     frame = self._process_image(img)
                     frame.save(f'./frames_{self._id}/img{i}.png')
                     if self.progress:
-                        print(f"\r{round((i/total_frames)*100)}% complete", end='')
+                        self.on_image()
                 else:
                     frames.append(img)
                 i+=1
@@ -510,3 +571,4 @@ class VideoConverter(BaseConverter):
         for f in glob.glob(f'./frames_{self._id}/*'):
             os.remove(f)
         os.rmdir(f'./frames_{self._id}')
+        

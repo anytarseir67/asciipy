@@ -163,3 +163,7 @@ asciipy/downloaded
 *.otf
 asciipy/time.bat
 !docs/source/images/*.png
+build.bat
+test.build/
+test.cmd
+test.exe
