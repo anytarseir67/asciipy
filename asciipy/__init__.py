@@ -249,7 +249,7 @@ class BaseConverter:
             raise NotImplementedError("method only implemented in subclasses.")
 
     def on_image(self, frame: Union[os.PathLike, IOBase, str]) -> Any:
-        """method called after an image or frame is converted and saved, implemented by subclasses or with :deco:`~asciipy.BaseConverter.image`.
+        """method called after an image or frame is converted and saved, implemented by subclasses or with :meth:`~asciipy.BaseConverter.image`.
 
         Parameters
         ----------
