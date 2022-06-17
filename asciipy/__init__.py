@@ -298,7 +298,7 @@ class ImageConverter(BaseConverter):
         super().__init__(config, background)
 
     def on_image(self, frame: Union[os.PathLike, IOBase, str]) -> Any:
-        """method called after an image or frame is converted and saved, implemented with :deco:`~asciipy.ImageConverter.image`.
+        """method called after an image or frame is converted and saved, implemented with :meth:`~asciipy.ImageConverter.image`.
 
         Parameters
         ----------
@@ -360,7 +360,7 @@ class GifConverter(BaseConverter):
         self._gif = gif
 
     def on_image(self, frame: Union[os.PathLike, IOBase, str]) -> Any:
-        """method called after a gif or image is converted and saved, implemented with :deco:`~asciipy.GifConverter.image`.
+        """method called after a gif or image is converted and saved, implemented with :meth:`~asciipy.GifConverter.image`.
 
         Parameters
         ----------
@@ -455,7 +455,7 @@ class VideoConverter(BaseConverter):
         self.on_image = func
 
     def on_image(self, frame: Union[os.PathLike, IOBase, str]) -> Any:
-        """method called after a frame is converted and saved, implemented with :deco:`~asciipy.VideoConverter.image`.
+        """method called after a frame is converted and saved, implemented with :meth:`~asciipy.VideoConverter.image`.
 
         Parameters
         ----------
