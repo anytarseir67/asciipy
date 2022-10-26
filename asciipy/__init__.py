@@ -463,15 +463,15 @@ class VideoConverter(BaseConverter):
             path to the saved frame
         """
 
-    def _render_process(self, frames: List[Image.Image], num: int, count: "multiprocessing.Value[int]") -> None:
+    def _render_process(self, frames: List[Image.Image], num: int, count: "multiprocessing.Value[int]"=None) -> None:
         try:
             for frame in frames:
                 _ascii = self._process_image(frame)
                 _ascii.save(f'./frames_{self._id}/img{num}.png')
                 num += 1
-                with count.get_lock():
-                   count.value += 1
-            return 
+                if count:
+                    with count.get_lock():
+                        count.value += 1
         except KeyboardInterrupt:
             return
 
@@ -517,14 +517,17 @@ class VideoConverter(BaseConverter):
                     frame = self._process_image(img)
                     frame.save(f'./frames_{self._id}/img{i}.png')
                     if self.progress:
-                        self.on_image()
+                        self.on_image(f'./frames_{self._id}/img{i}.png')
                 else:
                     frames.append(img)
                 i+=1
-
+                if self.progress:
+                    print(f"\rloading video... {round((i/total_frames)*100)}% complete. ", end='')
+            if self.progress:
+                print('\n')
             if self.converters > 1:
                 print("WARNING: multiprocess conversion is not yet finished, please report any bugs at: https://github.com/anytarseir67/asciipy/issues/new")
-                count = multiprocessing.Value('i', 0)
+                count = multiprocessing.Value('i', 0) if self.progress == True else None
                 chunk_len = round(len(frames)/self.converters)
                 chunks = list(self._chunk(frames, chunk_len))
                 cur = 0
