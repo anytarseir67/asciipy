@@ -563,8 +563,9 @@ class VideoConverter(BaseConverter):
             self._clear()
 
     def _combine(self) -> None:
-        os.system(f'ffmpeg -loglevel quiet -hide_banner -nostats -r {self.fps} -i ./frames_{self._id}/img%01d.png -y temp.mp4')
-        os.system(f'ffmpeg -loglevel quiet -hide_banner -nostats -i temp.mp4 -i "{self.input}" -map 0:v -map 1:a? -y {self.output}')
+        vcodec = "libx264" # will be changable later, just messing around with it for now.
+        os.system(f'ffmpeg -loglevel quiet -hide_banner -nostats -r {self.fps} -i ./frames_{self._id}/img%01d.png -vcodec {vcodec} -y temp.mp4')
+        os.system(f'ffmpeg -loglevel quiet -hide_banner -nostats -i temp.mp4 -i "{self.input}" -vcodec {vcodec} -map 0:v -map 1:a? -y {self.output}')
 
     def _clear(self) -> None:
         try:
